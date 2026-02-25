@@ -30,7 +30,7 @@ const activityData = [
 
 export default function Dashboard() {
     const { student, darkMode, setActivePage } = useLMSStore()
-    const [activeModal, setActiveModal] = useState(null) // null, 'continue', 'quiz', 'graph', 'peer', 'practice'
+    const [activeModal, setActiveModal] = useState(null) // null, 'continue', 'quiz', 'graph', 'peer', 'practice', 'performance'
     const [continueView, setContinueView] = useState('resume') // 'resume' or 'syllabus'
     const [expandedSyllabus, setExpandedSyllabus] = useState([0])
     const [analyticsView, setAnalyticsView] = useState('overview') // 'overview' | 'hub'
@@ -91,6 +91,13 @@ export default function Dashboard() {
     const [correctCount, setCorrectCount] = useState(0)
     const [xpEarned, setXpEarned] = useState(0)
     const timerRef = useRef(null)
+
+    // ── Performance Optimization State ────────────────────────────────
+    const [performanceView, setPerformanceView] = useState('concept') // 'concept' | 'lab' | 'patterns' | 'analyzer' | 'challenge' | 'report' | 'unlock'
+    const [perfCode, setPerfCode] = useState('// Paste your code here for performance analysis...')
+    const [perfAnalysis, setPerfAnalysis] = useState(null)
+    const [perfChallengeActive, setPerfChallengeActive] = useState(false)
+    const [perfScore, setPerfScore] = useState({ speed: 0, memory: 0, readability: 0 })
 
     const toggleSyllabusModule = (index) => {
         setExpandedSyllabus(prev =>
@@ -427,7 +434,10 @@ export default function Dashboard() {
                                                 </div>
                                             </div>
 
-                                            <div className="flex items-center gap-3 text-xs font-bold text-gray-500 group/link cursor-pointer hover:text-blue-500 transition-colors">
+                                            <div
+                                                onClick={() => { setActiveModal('performance'); setPerformanceView('concept'); }}
+                                                className="flex items-center gap-3 text-xs font-bold text-gray-500 group/link cursor-pointer hover:text-blue-500 transition-colors"
+                                            >
                                                 <ArrowRight size={14} className="transition-transform group-hover/link:translate-x-1" />
                                                 <span>Next: Performance Optimization</span>
                                             </div>
@@ -485,9 +495,24 @@ export default function Dashboard() {
                                     />
                                     <button
                                         onClick={() => { setActiveModal('recommendation'); setRecommendationView('roadmap'); }}
-                                        className={`w-full py-2 text-xs font-bold uppercase tracking-widest mt-2 ${darkMode ? 'text-gray-500 hover:text-white' : 'text-gray-400 hover:text-gray-900'}`}
+                                        className={`group w-full py-4 px-6 rounded-2xl border flex items-center justify-between transition-all duration-500 overflow-hidden relative mt-2 ${darkMode
+                                            ? 'bg-blue-500/5 border-blue-500/10 hover:bg-blue-500/10 hover:border-blue-500/30'
+                                            : 'bg-blue-50 border-blue-100 hover:bg-white hover:shadow-xl hover:shadow-blue-200/50 hover:border-blue-200'
+                                            }`}
                                     >
-                                        View All Suggestions
+                                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                                        <div className="flex items-center gap-3 relative z-10">
+                                            <div className={`p-2 rounded-lg ${darkMode ? 'bg-white/5' : 'bg-white shadow-sm'} group-hover:rotate-12 transition-transform duration-500`}>
+                                                <Target size={16} className="text-blue-500" />
+                                            </div>
+                                            <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${darkMode ? 'text-gray-300 group-hover:text-white' : 'text-gray-700 group-hover:text-blue-600'} transition-colors`}>
+                                                Explore Full Roadmap
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2 relative z-10">
+                                            <span className="text-[10px] font-black text-blue-500/50 uppercase tracking-widest group-hover:text-blue-500 transition-colors">42 Insights</span>
+                                            <ChevronRight size={14} className={`transition-transform duration-500 group-hover:translate-x-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                                        </div>
                                     </button>
                                 </div>
                             </SectionCard>
@@ -606,13 +631,15 @@ export default function Dashboard() {
                                         activeModal === 'quiz' ? 'bg-purple-500/10 text-purple-500' :
                                             activeModal === 'graph' ? 'bg-green-500/10 text-green-500' :
                                                 activeModal === 'peer' ? 'bg-orange-500/10 text-orange-500' :
-                                                    'bg-red-500/10 text-red-500'
+                                                    activeModal === 'performance' ? 'bg-emerald-500/10 text-emerald-500' :
+                                                        'bg-red-500/10 text-red-500'
                                         }`}>
                                         {activeModal === 'continue' && <PlayCircle size={24} />}
                                         {activeModal === 'quiz' && <Brain size={24} />}
                                         {activeModal === 'graph' && <BarChartIcon size={24} />}
                                         {activeModal === 'peer' && <Users2 size={24} />}
                                         {activeModal === 'practice' && <Flame size={24} />}
+                                        {activeModal === 'performance' && <Zap size={24} />}
                                     </div>
                                     <div>
                                         <h3 className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -621,6 +648,7 @@ export default function Dashboard() {
                                             {activeModal === 'graph' && 'Student Skill Graph'}
                                             {activeModal === 'peer' && 'Live Study Session'}
                                             {activeModal === 'practice' && 'AI Weakness Drills'}
+                                            {activeModal === 'performance' && 'Performance Optimization Lab'}
                                         </h3>
                                         <p className="text-sm font-bold text-gray-500">
                                             {activeModal === 'continue' && 'Pick up exactly where you left off.'}
@@ -628,6 +656,7 @@ export default function Dashboard() {
                                             {activeModal === 'graph' && 'Your live performance analytics.'}
                                             {activeModal === 'peer' && 'Real-time collaboration with peers.'}
                                             {activeModal === 'practice' && 'Targeting your personal knowledge gaps.'}
+                                            {activeModal === 'performance' && 'Visualizing and refining code efficiency.'}
                                         </p>
                                     </div>
                                 </div>
@@ -2223,56 +2252,87 @@ export default function Dashboard() {
                                         <AnimatePresence mode="wait">
                                             {recommendationView === 'trees' && (
                                                 <motion.div key="trees" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="space-y-6">
-                                                    <div className={`p-6 rounded-[2.5rem] border ${darkMode ? 'bg-blue-500/5 border-blue-500/10' : 'bg-blue-50 border-blue-100'}`}>
-                                                        <div className="flex items-center gap-3 mb-6">
-                                                            <div className="p-2 bg-blue-500 rounded-xl text-white"><BookOpen size={20} /></div>
+                                                    <div className={`p-8 rounded-[3rem] border ${darkMode ? 'bg-[#151b23] border-white/5' : 'bg-white border-gray-100 shadow-xl shadow-gray-200/50'} relative overflow-hidden group`}>
+                                                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-500 opacity-50" />
+
+                                                        <div className="flex items-center gap-4 mb-8">
+                                                            <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl text-white shadow-lg shadow-blue-500/20"><BookOpen size={24} /></div>
                                                             <div>
-                                                                <h4 className={`text-xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Smart Revision Hub: Trees</h4>
-                                                                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Personalized Focus Area</p>
+                                                                <h4 className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-gray-900'} tracking-tight`}>Smart Revision Hub: Trees</h4>
+                                                                <div className="flex items-center gap-2 mt-1">
+                                                                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                                                                    <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Personalized Focus Area</span>
+                                                                </div>
                                                             </div>
                                                         </div>
 
                                                         {/* Tree Simulator */}
-                                                        <div className={`p-6 rounded-3xl mb-6 relative overflow-hidden ${darkMode ? 'bg-black/30' : 'bg-white shadow-sm'} border border-blue-500/10`}>
-                                                            <div className="flex justify-between items-center mb-6">
-                                                                <span className="text-[10px] font-black uppercase text-blue-500 tracking-widest">Visual Tree Simulator</span>
-                                                                <div className="flex gap-2">
+                                                        <div className={`p-8 rounded-[2rem] mb-8 relative overflow-hidden ${darkMode ? 'bg-black/40 border-white/5' : 'bg-blue-50/50 border-blue-100'} border group-hover:border-blue-500/20 transition-all duration-500 shadow-inner`}>
+                                                            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
+                                                                <span className="text-xs font-black uppercase text-blue-400 tracking-[0.2em] flex items-center gap-2">
+                                                                    <Activity size={14} /> Visual Tree Simulator
+                                                                </span>
+                                                                <div className="flex gap-2 p-1 bg-black/20 rounded-xl border border-white/5">
                                                                     {['Insert', 'Traverse', 'Delete'].map(act => (
-                                                                        <button key={act} onClick={() => setTreeSimStep(prev => (prev + 1) % 3)} className={`px-3 py-1 rounded-lg text-[10px] font-black border transition-all ${darkMode ? 'bg-white/5 border-white/10 text-gray-400 hover:text-white' : 'bg-gray-50 border-gray-200 text-gray-500'}`}>{act}</button>
+                                                                        <button
+                                                                            key={act}
+                                                                            onClick={() => setTreeSimStep(prev => (prev + 1) % 3)}
+                                                                            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${darkMode
+                                                                                ? 'text-gray-400 hover:text-white hover:bg-white/5'
+                                                                                : 'text-gray-500 hover:text-blue-600 hover:bg-white'
+                                                                                }`}
+                                                                        >
+                                                                            {act}
+                                                                        </button>
                                                                     ))}
                                                                 </div>
                                                             </div>
-                                                            <div className="h-40 w-full flex items-center justify-center relative">
-                                                                {/* Simple SVG Tree Representation */}
-                                                                <svg width="200" height="120" viewBox="0 0 200 120">
-                                                                    <motion.line x1="100" y1="20" x2="60" y2="60" stroke="#3b82f6" strokeWidth="2" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} />
-                                                                    <motion.line x1="100" y1="20" x2="140" y2="60" stroke="#3b82f6" strokeWidth="2" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} />
-                                                                    <motion.circle cx="100" cy="20" r="12" fill={treeSimStep === 0 ? "#3b82f6" : "#1a222c"} stroke="#58a6ff" strokeWidth="2" whileHover={{ scale: 1.2 }} />
-                                                                    <motion.circle cx="60" cy="60" r="12" fill={treeSimStep === 1 ? "#3b82f6" : "#1a222c"} stroke="#58a6ff" strokeWidth="2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} />
-                                                                    <motion.circle cx="140" cy="60" r="12" fill={treeSimStep === 2 ? "#3b82f6" : "#1a222c"} stroke="#58a6ff" strokeWidth="2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} />
-                                                                    <text x="100" y="24" fontSize="8" textAnchor="middle" fill="white" fontWeight="bold">15</text>
-                                                                    <text x="60" y="64" fontSize="8" textAnchor="middle" fill="white" fontWeight="bold">8</text>
-                                                                    <text x="140" y="64" fontSize="8" textAnchor="middle" fill="white" fontWeight="bold">24</text>
+                                                            <div className="h-44 w-full flex items-center justify-center relative">
+                                                                <svg width="220" height="140" viewBox="0 0 220 140" className="drop-shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+                                                                    <motion.line x1="110" y1="20" x2="70" y2="70" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} />
+                                                                    <motion.line x1="110" y1="20" x2="150" y2="70" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} />
+                                                                    <motion.circle cx="110" cy="20" r="14" fill={treeSimStep === 0 ? "#3b82f6" : "#1a222c"} stroke="#60a5fa" strokeWidth="2.5" whileHover={{ scale: 1.2 }} transition={{ type: 'spring', stiffness: 300 }} />
+                                                                    <motion.circle cx="70" cy="70" r="14" fill={treeSimStep === 1 ? "#3b82f6" : "#1a222c"} stroke="#60a5fa" strokeWidth="2.5" initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3, type: 'spring' }} />
+                                                                    <motion.circle cx="150" cy="70" r="14" fill={treeSimStep === 2 ? "#3b82f6" : "#1a222c"} stroke="#60a5fa" strokeWidth="2.5" initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.6, type: 'spring' }} />
+                                                                    <text x="110" y="24" fontSize="10" textAnchor="middle" fill="white" fontWeight="900">15</text>
+                                                                    <text x="70" y="74" fontSize="10" textAnchor="middle" fill="white" fontWeight="900">8</text>
+                                                                    <text x="150" y="74" fontSize="10" textAnchor="middle" fill="white" fontWeight="900">24</text>
                                                                 </svg>
-                                                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute bottom-0 text-[9px] font-bold text-gray-500">
+                                                                <motion.div
+                                                                    key={treeSimStep}
+                                                                    initial={{ opacity: 0, y: 10 }}
+                                                                    animate={{ opacity: 1, y: 0 }}
+                                                                    className="absolute bottom-0 px-4 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full text-[10px] font-black text-blue-400 uppercase tracking-widest backdrop-blur-sm"
+                                                                >
                                                                     {treeSimStep === 0 ? "Inserting node 15 (Root)" : treeSimStep === 1 ? "In-order traversal: 8 -> 15" : "Tree height: 2 units"}
                                                                 </motion.div>
                                                             </div>
                                                         </div>
 
-                                                        <div className="grid grid-cols-2 gap-4 mb-6">
-                                                            <div className={`p-4 rounded-2xl border ${darkMode ? 'bg-white/5 border-white/5' : 'bg-gray-50 border-gray-100'}`}>
-                                                                <div className="text-[10px] font-black uppercase text-red-500 mb-2">Common Mistake</div>
-                                                                <p className="text-[11px] font-bold text-gray-500">Confusing Tree Height vs Depth. Height starts from bottom (0), Depth from Root (0).</p>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                                                            <div className={`p-6 rounded-3xl border ${darkMode ? 'bg-red-500/5 border-red-500/10' : 'bg-red-50 border-red-100'} group/item transition-all hover:scale-[1.02]`}>
+                                                                <div className="flex items-center gap-2 mb-3">
+                                                                    <AlertTriangle size={14} className="text-red-500" />
+                                                                    <span className="text-[10px] font-black uppercase text-red-500 tracking-widest">Common Mistake</span>
+                                                                </div>
+                                                                <p className={`text-[12px] font-bold leading-relaxed ${darkMode ? 'text-gray-400 group-hover/item:text-gray-300' : 'text-gray-600'}`}>Confusing Tree Height vs Depth. Height starts from bottom (0), Depth from Root (0).</p>
                                                             </div>
-                                                            <div className={`p-4 rounded-2xl border ${darkMode ? 'bg-white/5 border-white/5' : 'bg-gray-50 border-gray-100'}`}>
-                                                                <div className="text-[10px] font-black uppercase text-green-500 mb-2">Interview Hack</div>
-                                                                <p className="text-[11px] font-bold text-gray-500">BST Search: O(log N) average, but O(N) if skewed. Always mention Balancing.</p>
+                                                            <div className={`p-6 rounded-3xl border ${darkMode ? 'bg-green-500/5 border-green-500/10' : 'bg-green-50 border-green-100'} group/item transition-all hover:scale-[1.02]`}>
+                                                                <div className="flex items-center gap-2 mb-3">
+                                                                    <Sparkles size={14} className="text-green-500" />
+                                                                    <span className="text-[10px] font-black uppercase text-green-500 tracking-widest">Interview Hack</span>
+                                                                </div>
+                                                                <p className={`text-[12px] font-bold leading-relaxed ${darkMode ? 'text-gray-400 group-hover/item:text-gray-300' : 'text-gray-600'}`}>BST Search: O(log N) average, but O(N) if skewed. Always mention Balancing.</p>
                                                             </div>
                                                         </div>
 
-                                                        <button onClick={() => { setActiveModal(null); setSkillAccuracy(prev => Math.min(100, prev + 5)); }} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-blue-500/30 active:scale-95 transition-all flex items-center justify-center gap-3">
-                                                            🚀 Start Tree Practice <Rocket size={20} />
+                                                        <button
+                                                            onClick={() => { setActiveModal(null); setSkillAccuracy(prev => Math.min(100, prev + 5)); }}
+                                                            className="w-full py-5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-[2rem] font-black text-lg shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 group/btn relative overflow-hidden"
+                                                        >
+                                                            <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-1000 skew-x-12" />
+                                                            <span>🚀 Start Tree Practice</span>
+                                                            <Rocket size={20} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
                                                         </button>
                                                     </div>
                                                 </motion.div>
@@ -2280,30 +2340,60 @@ export default function Dashboard() {
 
                                             {recommendationView === 'recursion' && (
                                                 <motion.div key="recursion" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-                                                    <div className={`p-6 rounded-[2.5rem] border ${darkMode ? 'bg-purple-500/5 border-purple-500/10' : 'bg-purple-50 border-purple-100'}`}>
-                                                        <div className="flex items-center gap-3 mb-6">
-                                                            <div className="p-2 bg-purple-500 rounded-xl text-white"><Zap size={20} /></div>
+                                                    <div className={`p-8 rounded-[3rem] border ${darkMode ? 'bg-[#1a1625] border-purple-500/10' : 'bg-white border-purple-100 shadow-xl shadow-purple-200/50'} relative overflow-hidden group`}>
+                                                        <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-purple-500 to-indigo-500 opacity-50" />
+
+                                                        <div className="flex items-center gap-4 mb-8">
+                                                            <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl text-white shadow-lg shadow-purple-500/20"><Zap size={24} /></div>
                                                             <div>
-                                                                <h4 className={`text-xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Recursion Drill Mode</h4>
-                                                                <p className="text-xs font-bold text-purple-500 uppercase tracking-widest">AI Mistake Detector Active</p>
+                                                                <h4 className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-gray-900'} tracking-tight`}>Recursion Drill Mode</h4>
+                                                                <div className="flex items-center gap-2 mt-1">
+                                                                    <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+                                                                    <span className="text-[10px] font-black text-purple-500 uppercase tracking-widest">AI Mistake Detector Active</span>
+                                                                </div>
                                                             </div>
                                                         </div>
 
                                                         {/* Debug Visualizer */}
-                                                        <div className={`p-6 rounded-3xl border ${darkMode ? 'bg-black/40 border-purple-500/20' : 'bg-white border-purple-200'} mb-6`}>
-                                                            <div className="flex justify-between items-center mb-4">
-                                                                <span className="text-[10px] font-black uppercase text-purple-500 tracking-widest">Call Stack Debugger</span>
-                                                                <span className="text-[10px] font-black text-gray-500 uppercase">Depth: {recursionDebugStep}/4</span>
+                                                        <div className={`p-8 rounded-[2rem] border ${darkMode ? 'bg-black/40 border-purple-500/20' : 'bg-purple-50/50 border-purple-200'} mb-8 shadow-inner group-hover:border-purple-500/30 transition-all duration-500`}>
+                                                            <div className="flex justify-between items-center mb-6">
+                                                                <span className="text-xs font-black uppercase text-purple-400 tracking-[0.2em] flex items-center gap-2">
+                                                                    <Terminal size={14} /> Call Stack Debugger
+                                                                </span>
+                                                                <span className="px-3 py-1 bg-purple-500/10 rounded-lg text-[10px] font-black text-purple-400 uppercase tracking-widest border border-purple-500/20">
+                                                                    Depth: {recursionDebugStep}/4
+                                                                </span>
                                                             </div>
-                                                            <div className="flex flex-col-reverse gap-2 min-h-[140px] justify-start transition-all">
-                                                                {Array.from({ length: recursionDebugStep + 1 }).map((_, i) => (
-                                                                    <motion.div key={i} initial={{ opacity: 0, scale: 0.9, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} className={`p-2 rounded-lg border text-[10px] font-bold font-mono transition-all ${i === recursionDebugStep ? 'bg-purple-500 text-white border-purple-400' : 'bg-gray-500/10 text-gray-500 border-gray-500/10'}`}>
-                                                                        factorial({4 - i}) {i === 4 ? "-> return 1" : ""}
-                                                                    </motion.div>
-                                                                ))}
+                                                            <div className="flex flex-col-reverse gap-3 min-h-[160px] justify-start transition-all">
+                                                                <AnimatePresence>
+                                                                    {Array.from({ length: recursionDebugStep + 1 }).map((_, i) => (
+                                                                        <motion.div
+                                                                            key={i}
+                                                                            initial={{ opacity: 0, scale: 0.9, y: 10, x: -10 * i }}
+                                                                            animate={{ opacity: 1, scale: 1, y: 0, x: -10 * i }}
+                                                                            className={`p-4 rounded-xl border-l-4 text-[13px] font-black font-mono transition-all relative group/stack ${i === recursionDebugStep
+                                                                                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-white shadow-lg shadow-purple-500/20'
+                                                                                : 'bg-black/30 text-gray-500 border-purple-500/20 opacity-60'
+                                                                                }`}
+                                                                        >
+                                                                            <div className="flex justify-between items-center">
+                                                                                <span>factorial({4 - i})</span>
+                                                                                {i === 4 && <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded uppercase">Base Case</span>}
+                                                                            </div>
+                                                                            {i === 4 && <div className="text-[10px] mt-1 opacity-80 italic">{"-> returns 1"}</div>}
+                                                                            <div className="absolute right-[-20px] top-1/2 -translate-y-1/2 opacity-0 group-hover/stack:opacity-100 transition-opacity">
+                                                                                <ChevronRight size={14} className="text-purple-400" />
+                                                                            </div>
+                                                                        </motion.div>
+                                                                    ))}
+                                                                </AnimatePresence>
                                                                 {recursionDebugStep < 4 && (
-                                                                    <button onClick={() => setRecursionDebugStep(s => s + 1)} className={`p-4 rounded-xl border border-dashed border-purple-500/30 flex items-center justify-center text-purple-500/50 hover:bg-purple-500/5 transition-all`}>
-                                                                        <Plus size={16} /> <span className="text-[10px] font-black uppercase ml-2">Next Recursive Call</span>
+                                                                    <button
+                                                                        onClick={() => setRecursionDebugStep(s => s + 1)}
+                                                                        className={`p-6 rounded-2xl border-2 border-dashed border-purple-500/20 flex flex-col items-center justify-center text-purple-500/40 hover:text-purple-500 hover:bg-purple-500/5 hover:border-purple-500/40 transition-all duration-300 gap-2 mb-2`}
+                                                                    >
+                                                                        <Plus size={24} />
+                                                                        <span className="text-[11px] font-black uppercase tracking-[0.2em]">Next Recursive Call</span>
                                                                     </button>
                                                                 )}
                                                             </div>
@@ -2327,43 +2417,62 @@ export default function Dashboard() {
 
                                             {recommendationView === 'roadmap' && (
                                                 <div className="relative min-h-[600px]">
-                                                    <motion.div key="roadmap" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+                                                    <motion.div key="roadmap" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8 relative">
                                                         {/* 🎯 Full AI Roadmap Dashboard Header */}
-                                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                                            <div>
-                                                                <h4 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Full AI Roadmap Dashboard</h4>
-                                                                <p className="text-sm font-bold text-gray-500">Mastery Path based on 42 recent data points</p>
+                                                        <div className={`p-8 rounded-[3rem] overflow-hidden relative ${darkMode ? 'bg-gradient-to-r from-blue-900/40 via-[#0f172a] to-purple-900/40 border-white/5 shadow-2xl shadow-blue-500/10' : 'bg-white border-gray-100 shadow-xl shadow-gray-200/50'}`}>
+                                                            {/* Mesh Gradient Background Effect */}
+                                                            <div className="absolute inset-0 opacity-30">
+                                                                <div className="absolute top-0 -left-1/4 w-1/2 h-full bg-blue-500 blur-[100px] animate-pulse rounded-full" />
+                                                                <div className="absolute bottom-0 -right-1/4 w-1/2 h-full bg-purple-500 blur-[100px] animate-pulse rounded-full" style={{ animationDelay: '2s' }} />
                                                             </div>
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="px-4 py-2 bg-green-500/10 border border-green-500/20 text-green-500 rounded-2xl text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                                                                    <CheckCircle2 size={16} /> 68% Confidence
+
+                                                            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                                                <div>
+                                                                    <div className="flex items-center gap-3 mb-2">
+                                                                        <div className="px-3 py-1 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 rounded-full text-[10px] font-black uppercase tracking-[0.2em] animate-pulse">Live AI Analysis</div>
+                                                                        <div className="w-2 h-2 rounded-full bg-green-500 animate-ping" />
+                                                                    </div>
+                                                                    <h4 className={`text-4xl md:text-5xl font-black ${darkMode ? 'text-white' : 'text-gray-900'} tracking-tight leading-tight mb-2`}>
+                                                                        Full AI <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Roadmap</span> Dashboard
+                                                                    </h4>
+                                                                    <p className="text-base font-bold text-gray-400 flex items-center gap-2">
+                                                                        <Brain size={16} className="text-blue-500" /> Mastery Path based on 42 recent data points
+                                                                    </p>
                                                                 </div>
-                                                                <div className="px-4 py-2 bg-blue-500/10 border border-blue-500/20 text-blue-500 rounded-2xl text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                                                                    <TrendingUp size={16} /> +12% Trend
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className={`px-6 py-4 ${darkMode ? 'bg-black/40 border-white/5' : 'bg-white shadow-lg shadow-gray-200'} border rounded-3xl flex flex-col items-center justify-center min-w-[140px] group hover:scale-105 transition-transform duration-300`}>
+                                                                        <div className="text-2xl font-black text-green-500 group-hover:drop-shadow-[0_0_8px_rgba(34,197,94,0.5)] transition-all">68%</div>
+                                                                        <div className="text-[10px] font-black uppercase tracking-widest text-gray-500 mt-1">Confidence</div>
+                                                                    </div>
+                                                                    <div className={`px-6 py-4 ${darkMode ? 'bg-black/40 border-white/5' : 'bg-white shadow-lg shadow-gray-200'} border rounded-3xl flex flex-col items-center justify-center min-w-[140px] group hover:scale-105 transition-transform duration-300`}>
+                                                                        <div className="text-2xl font-black text-blue-500 group-hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.5)] transition-all">+12%</div>
+                                                                        <div className="text-[10px] font-black uppercase tracking-widest text-gray-500 mt-1">Growth Trend</div>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
 
                                                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                                             {/* 🔹 Weak Concepts */}
-                                                            <div className={`p-6 rounded-[2.5rem] border ${darkMode ? 'bg-[#1a222c] border-white/5' : 'bg-gray-50 border-gray-100'}`}>
-                                                                <h5 className="text-xs font-black uppercase text-gray-500 mb-6 tracking-widest flex items-center gap-2">
-                                                                    <AlertTriangle size={16} className="text-red-500" /> Weak Concepts
+                                                            <div className={`p-8 rounded-[2.5rem] border ${darkMode ? 'bg-[#151b23] border-white/5' : 'bg-white border-gray-100 shadow-xl shadow-gray-200/50'} relative overflow-hidden group`}>
+                                                                <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 blur-3xl -mr-16 -mt-16 rounded-full transition-transform group-hover:scale-150 duration-700" />
+                                                                <h5 className="text-xs font-black uppercase text-gray-500 mb-8 tracking-[0.2em] flex items-center gap-3">
+                                                                    <AlertTriangle size={18} className="text-red-500/80" /> Weak Concepts
                                                                 </h5>
-                                                                <div className="space-y-5">
+                                                                <div className="space-y-6 relative z-10">
                                                                     {[
-                                                                        { label: 'Trees', mastery: 62, color: 'bg-red-500' },
-                                                                        { label: 'Recursion', mastery: 45, color: 'bg-orange-500' },
-                                                                        { label: 'CI/CD', mastery: 38, color: 'bg-red-600' },
-                                                                        { label: 'System Design basics', mastery: 52, color: 'bg-yellow-500' }
+                                                                        { label: 'Trees', mastery: 62, color: 'from-red-500/80 to-red-400' },
+                                                                        { label: 'Recursion', mastery: 45, color: 'from-orange-500 to-amber-400' },
+                                                                        { label: 'CI/CD', mastery: 38, color: 'from-red-600 to-rose-500' },
+                                                                        { label: 'System Design basics', mastery: 52, color: 'from-yellow-500 to-amber-300' }
                                                                     ].map((item, i) => (
-                                                                        <div key={i} className="space-y-2">
-                                                                            <div className="flex justify-between text-xs font-bold">
-                                                                                <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>{item.label}</span>
-                                                                                <span className="text-red-500">{item.mastery}% Mastery</span>
+                                                                        <div key={i} className="space-y-3">
+                                                                            <div className="flex justify-between items-end text-sm font-bold">
+                                                                                <span className={darkMode ? 'text-gray-200' : 'text-gray-800'}>{item.label}</span>
+                                                                                <span className={`text-[11px] font-black uppercase tracking-wider ${item.color.includes('orange') || item.color.includes('yellow') ? 'text-orange-500' : 'text-red-500'}`}>{item.mastery}% Mastery</span>
                                                                             </div>
-                                                                            <div className="w-full h-2 bg-black/20 rounded-full overflow-hidden">
-                                                                                <motion.div initial={{ width: 0 }} animate={{ width: `${item.mastery}%` }} className={`h-full ${item.color}`} />
+                                                                            <div className="w-full h-2.5 bg-black/20 rounded-full overflow-hidden shadow-inner">
+                                                                                <motion.div initial={{ width: 0 }} animate={{ width: `${item.mastery}%` }} className={`h-full bg-gradient-to-r ${item.color} rounded-full`} />
                                                                             </div>
                                                                         </div>
                                                                     ))}
@@ -2371,52 +2480,59 @@ export default function Dashboard() {
                                                             </div>
 
                                                             {/* 🔹 Skill Improvement Suggestions */}
-                                                            <div className={`p-6 rounded-[2.5rem] border ${darkMode ? 'bg-[#1a222c] border-white/5' : 'bg-gray-50 border-gray-100'}`}>
-                                                                <h5 className="text-xs font-black uppercase text-gray-500 mb-6 tracking-widest flex items-center gap-2">
-                                                                    <Sparkles size={16} className="text-blue-500" /> Skill Improvements
+                                                            <div className={`p-8 rounded-[2.5rem] border ${darkMode ? 'bg-[#151b23] border-white/5' : 'bg-white border-gray-100 shadow-xl shadow-gray-200/50'} relative overflow-hidden group`}>
+                                                                <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-500/5 blur-3xl -ml-20 -mb-20 rounded-full transition-transform group-hover:scale-150 duration-700" />
+                                                                <h5 className="text-xs font-black uppercase text-gray-500 mb-8 tracking-[0.2em] flex items-center gap-3">
+                                                                    <Sparkles size={18} className="text-blue-500/80" /> Skill Improvements
                                                                 </h5>
-                                                                <div className="space-y-4">
+                                                                <div className="space-y-5 relative z-10 flex flex-col justify-center h-[calc(100%-3rem)]">
                                                                     {[
-                                                                        { label: 'Increase speed in Algorithms', icon: Cpu, improvement: '+18% Speed' },
-                                                                        { label: 'Improve backend API structuring', icon: Server, improvement: 'Logic Gap' },
-                                                                        { label: 'Practice DevOps deployment flow', icon: Globe, improvement: '+25% Clarity' }
+                                                                        { label: 'Increase speed in Algorithms', icon: Cpu, improvement: '+18% Speed', accent: 'text-green-500', bg: 'bg-green-500/10' },
+                                                                        { label: 'Improve backend API structuring', icon: Server, improvement: 'Logic Gap', accent: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                                                                        { label: 'Practice DevOps deployment flow', icon: Globe, improvement: '+25% Clarity', accent: 'text-teal-500', bg: 'bg-teal-500/10' }
                                                                     ].map((s, i) => (
-                                                                        <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-black/20 border border-white/5 group hover:border-blue-500/30 transition-all cursor-pointer">
-                                                                            <div className="flex items-center gap-3">
-                                                                                <s.icon size={18} className="text-blue-500" />
-                                                                                <span className={`text-[11px] font-black leading-tight ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{s.label}</span>
+                                                                        <div key={i} className={`flex items-center justify-between p-5 rounded-3xl ${darkMode ? 'bg-black/30 border-white/5 hover:border-white/10' : 'bg-gray-50 border-gray-100 hover:border-gray-200'} border transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md group/item`}>
+                                                                            <div className="flex items-center gap-4">
+                                                                                <div className={`p-2.5 rounded-xl ${s.bg} border border-white/5 group-hover/item:scale-110 transition-transform duration-300`}>
+                                                                                    <s.icon size={16} className={s.accent} />
+                                                                                </div>
+                                                                                <span className={`text-[13px] font-black leading-snug w-[130px] ${darkMode ? 'text-gray-200 group-hover/item:text-white' : 'text-gray-700 group-hover/item:text-black'} transition-colors`}>{s.label}</span>
                                                                             </div>
-                                                                            <span className="text-[10px] font-black text-green-500 shrink-0">{s.improvement}</span>
+                                                                            <span className={`text-[11px] font-black ${s.accent} shrink-0 bg-white/5 px-2.5 py-1 rounded-lg backdrop-blur-sm`}>{s.improvement}</span>
                                                                         </div>
                                                                     ))}
                                                                 </div>
                                                             </div>
 
                                                             {/* 📊 Extra Smart Features */}
-                                                            <div className={`p-6 rounded-[2.5rem] border ${darkMode ? 'bg-[#1a222c] border-white/5' : 'bg-gray-50 border-gray-100'}`}>
-                                                                <h5 className="text-xs font-black uppercase text-gray-500 mb-6 tracking-widest flex items-center gap-2">
-                                                                    <BarChartIcon size={16} className="text-purple-500" /> Mastery Intel
+                                                            <div className={`p-8 rounded-[2.5rem] border ${darkMode ? 'bg-[#151b23] border-white/5' : 'bg-white border-gray-100 shadow-xl shadow-gray-200/50'} relative overflow-hidden group`}>
+                                                                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                                                                <h5 className="text-xs font-black uppercase text-gray-500 mb-8 tracking-[0.2em] flex items-center gap-3">
+                                                                    <BarChartIcon size={18} className="text-purple-500/80" /> Mastery Intel
                                                                 </h5>
-                                                                <div className="space-y-6">
-                                                                    <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20">
-                                                                        <div className="text-[10px] font-black uppercase text-purple-500 mb-1">Suggested Next Milestone</div>
-                                                                        <div className="text-sm font-black text-white flex items-center gap-2">
-                                                                            <Award size={16} className="text-yellow-500" /> Advanced Ready
+                                                                <div className="space-y-5 relative z-10">
+                                                                    <div className={`p-6 rounded-3xl ${darkMode ? 'bg-gradient-to-br from-[#1e1b4b]/80 to-[#2e1065]/40 border-purple-500/20 shadow-[0_0_30px_-10px_rgba(168,85,247,0.15)]' : 'bg-purple-50 border-purple-100 shadow-inner'}`}>
+                                                                        <div className="text-[10px] font-black uppercase text-purple-400 mb-2 tracking-widest">Suggested Next Milestone</div>
+                                                                        <div className={`text-xl font-black ${darkMode ? 'text-white' : 'text-gray-900'} flex gap-3 mt-3`}>
+                                                                            <Award size={22} className="text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)] flex-shrink-0 mt-0.5" />
+                                                                            <span className="leading-tight">Advanced Ready</span>
                                                                         </div>
                                                                     </div>
+
                                                                     <div className="grid grid-cols-2 gap-4">
-                                                                        <div className="p-4 rounded-2xl bg-black/20 border border-white/5">
-                                                                            <div className="text-[10px] font-black uppercase text-gray-500 mb-1">Est. Mastery Time</div>
-                                                                            <div className="text-xl font-black text-blue-400">3h 12m</div>
+                                                                        <div className={`p-5 rounded-3xl ${darkMode ? 'bg-black/30 border-white/5' : 'bg-gray-50 border-gray-100'} border flex flex-col justify-center`}>
+                                                                            <div className="text-[9px] font-black uppercase text-gray-500 mb-2 tracking-widest">Est. Mastery Time</div>
+                                                                            <div className="text-2xl font-black text-blue-400 tracking-tight">3h 12m</div>
                                                                         </div>
-                                                                        <div className="p-4 rounded-2xl bg-black/20 border border-white/5">
-                                                                            <div className="text-[10px] font-black uppercase text-gray-500 mb-1">Improvement Trend</div>
-                                                                            <div className="text-xl font-black text-green-500">+14.2%</div>
+                                                                        <div className={`p-5 rounded-3xl ${darkMode ? 'bg-black/30 border-white/5' : 'bg-gray-50 border-gray-100'} border flex flex-col justify-center`}>
+                                                                            <div className="text-[9px] font-black uppercase text-gray-500 mb-2 tracking-widest">Improvement Trend</div>
+                                                                            <div className="text-xl font-black text-green-400 tracking-tight mt-1">+14.2%</div>
                                                                         </div>
                                                                     </div>
+
                                                                     <button
                                                                         onClick={() => setRoadmapSubView('commit')}
-                                                                        className="w-full py-4 bg-white text-blue-600 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-black/10 hover:scale-[1.02] active:scale-95 transition-all"
+                                                                        className="w-full py-4 bg-white text-blue-600 rounded-2xl text-xs font-black uppercase tracking-[0.15em] shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] hover:shadow-[0_10px_40px_-5px_rgba(255,255,255,0.4)] hover:scale-[1.02] active:scale-95 transition-all mt-2"
                                                                     >
                                                                         Lock Next Target
                                                                     </button>
@@ -2425,29 +2541,45 @@ export default function Dashboard() {
                                                         </div>
 
                                                         {/* 🔹 Smart Actions */}
-                                                        <div className="space-y-4">
-                                                            <h5 className="text-xs font-black uppercase text-gray-500 tracking-widest flex items-center gap-2">
-                                                                <Target size={16} className="text-green-500" /> Smart Actions
-                                                            </h5>
-                                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                        <div className="space-y-6">
+                                                            <div className="flex items-center justify-between">
+                                                                <h5 className="text-sm font-black uppercase text-gray-500 tracking-[0.2em] flex items-center gap-3">
+                                                                    <Target size={20} className="text-green-500" /> Recommended Smart Actions
+                                                                </h5>
+                                                                <div className="h-px flex-1 mx-6 bg-gradient-to-r from-green-500/20 to-transparent" />
+                                                            </div>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                                                 {[
-                                                                    { label: 'Join Peer Session: Trees', icon: Users2, color: 'text-green-500 hover:bg-green-500/10 hover:border-green-500/30', view: 'peer_room' },
-                                                                    { label: 'Adaptive Quiz: Recursion', icon: Brain, color: 'text-purple-500 hover:bg-purple-500/10 hover:border-purple-500/30', view: 'recursive_quiz' },
-                                                                    { label: 'Watch Concept Booster', icon: MonitorPlay, color: 'text-blue-500 hover:bg-blue-500/10 hover:border-blue-500/30', view: 'booster' },
-                                                                    { label: '3 Real Interview Problems', icon: FileText, color: 'text-orange-500 hover:bg-orange-500/10 hover:border-orange-500/30', view: 'interview_sim' }
+                                                                    { label: 'Join Peer Session: Trees', sub: 'Active Collaborative Room', icon: Users2, color: 'text-green-500', glow: 'hover:shadow-[0_0_20px_-5px_rgba(34,197,94,0.3)] hover:border-green-500/40', view: 'peer_room' },
+                                                                    { label: 'Adaptive Quiz: Recursion', sub: 'AI Mistake Detection', icon: Brain, color: 'text-purple-500', glow: 'hover:shadow-[0_0_20px_-5px_rgba(168,85,247,0.3)] hover:border-purple-500/40', view: 'recursive_quiz' },
+                                                                    { label: 'Watch Concept Booster', sub: 'Visual Lesson Analysis', icon: MonitorPlay, color: 'text-blue-500', glow: 'hover:shadow-[0_0_20px_-5px_rgba(59,130,246,0.3)] hover:border-blue-500/40', view: 'booster' },
+                                                                    { label: 'Interview Simulation', sub: 'Dual-Pane Assessment', icon: FileText, color: 'text-orange-500', glow: 'hover:shadow-[0_0_20px_-5px_rgba(249,115,22,0.3)] hover:border-orange-500/40', view: 'interview_sim' }
                                                                 ].map((action, i) => (
                                                                     <button
                                                                         key={i}
                                                                         onClick={() => setRoadmapSubView(action.view)}
-                                                                        className={`p-6 rounded-3xl border flex flex-col items-center gap-4 transition-all ${darkMode ? 'bg-[#1a222c] border-white/5' : 'bg-white border-gray-100 shadow-sm'} ${action.color}`}
+                                                                        className={`group p-6 rounded-[2.5rem] border flex flex-col items-start gap-4 transition-all duration-300 active:scale-95 ${darkMode ? 'bg-[#151b23] border-white/5' : 'bg-white border-gray-100 shadow-sm'} ${action.glow} relative overflow-hidden`}
                                                                     >
-                                                                        <action.icon size={28} />
-                                                                        <span className="text-[11px] font-black uppercase text-center leading-tight">{action.label}</span>
+                                                                        <div className={`p-4 rounded-2xl ${darkMode ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-100'} group-hover:scale-110 transition-transform duration-300`}>
+                                                                            <action.icon size={24} className={action.color} />
+                                                                        </div>
+                                                                        <div>
+                                                                            <span className={`block text-[13px] font-black uppercase tracking-wider mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>{action.label}</span>
+                                                                            <span className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest">{action.sub}</span>
+                                                                        </div>
+                                                                        <div className={`absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity`}>
+                                                                            <ArrowRight size={14} className={action.color} />
+                                                                        </div>
                                                                     </button>
                                                                 ))}
                                                             </div>
                                                         </div>
                                                     </motion.div>
+                                                </div>
+                                            )}
+
+                                            {recommendationView === 'roadmap' && (
+                                                <div className="space-y-6 animate-in fade-in duration-700">
 
                                                     {/* 🚀 AI Roadmap Interactive Sub-Views */}
                                                     <AnimatePresence mode="wait">
@@ -2502,69 +2634,122 @@ export default function Dashboard() {
 
                                                                 {/* 🤝 2. Trees Discussion Room */}
                                                                 {roadmapSubView === 'peer_room' && (
-                                                                    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className={`w-full max-w-6xl rounded-[3rem] border shadow-2xl overflow-hidden flex flex-col md:flex-row h-[80vh] ${darkMode ? 'bg-[#0f172a] border-white/10' : 'bg-white border-gray-100'}`}>
+                                                                    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className={`w-full max-w-6xl rounded-[3rem] border shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row h-[80vh] ${darkMode ? 'bg-[#0f172a] border-white/10' : 'bg-white border-gray-100'} relative`}>
                                                                         <div className="flex-1 p-8 flex flex-col space-y-6">
-                                                                            <div className="flex items-center justify-between">
-                                                                                <div className="flex items-center gap-4">
-                                                                                    <div className="w-12 h-12 bg-green-500/10 rounded-2xl flex items-center justify-center text-green-500"><Users2 size={24} /></div>
+                                                                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                                                                <div className="flex items-center gap-5">
+                                                                                    <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-green-500/20"><Users2 size={28} /></div>
                                                                                     <div>
-                                                                                        <h4 className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Trees Discussion Room</h4>
-                                                                                        <p className="text-xs font-bold text-gray-500 flex items-center gap-2"><span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" /> 12 peers active now</p>
+                                                                                        <h4 className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-gray-900'} tracking-tight`}>Trees Discussion Room</h4>
+                                                                                        <div className="flex items-center gap-2 mt-1">
+                                                                                            <div className="flex -space-x-2">
+                                                                                                {[1, 2, 3].map(i => <div key={i} className="w-5 h-5 rounded-full border-2 border-[#0f172a] bg-gray-700" />)}
+                                                                                            </div>
+                                                                                            <p className="text-[10px] font-black text-green-500 uppercase tracking-widest">+12 peers active</p>
+                                                                                        </div>
                                                                                     </div>
                                                                                 </div>
-                                                                                <div className="flex gap-2">
-                                                                                    <button onClick={() => setPeerRoomSubView('whiteboard')} className={`px-4 py-2 rounded-xl text-xs font-black uppercase transition-all ${peerRoomSubView === 'whiteboard' ? 'bg-blue-500 text-white' : 'bg-gray-500/10 text-gray-500'}`}>Whiteboard</button>
-                                                                                    <button onClick={() => setPeerRoomSubView('battle')} className={`px-4 py-2 rounded-xl text-xs font-black uppercase transition-all ${peerRoomSubView === 'battle' ? 'bg-red-500 text-white' : 'bg-gray-500/10 text-gray-500'}`}>Tree Debug Battle</button>
+                                                                                <div className="flex gap-2 p-1.5 bg-black/20 rounded-2xl border border-white/5 backdrop-blur-md">
+                                                                                    <button onClick={() => setPeerRoomSubView('whiteboard')} className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${peerRoomSubView === 'whiteboard' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-400 hover:text-white'}`}>Whiteboard</button>
+                                                                                    <button onClick={() => setPeerRoomSubView('battle')} className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${peerRoomSubView === 'battle' ? 'bg-red-600 text-white shadow-lg shadow-red-500/20' : 'text-gray-400 hover:text-white'}`}>Tree Debug Battle</button>
                                                                                 </div>
                                                                             </div>
-                                                                            <div className={`flex-1 rounded-[2.5rem] border relative overflow-hidden ${darkMode ? 'bg-black/40 border-white/5' : 'bg-gray-50 border-gray-100'}`}>
+
+                                                                            <div className={`flex-1 rounded-[2.5rem] border relative overflow-hidden group/canvas ${darkMode ? 'bg-black/60 border-white/5 shadow-inner' : 'bg-gray-50 border-gray-100 shadow-inner'}`}>
                                                                                 {peerRoomSubView === 'whiteboard' ? (
-                                                                                    <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 space-y-4 text-center p-8">
-                                                                                        <Edit3 size={48} className="opacity-20 translate-y-2" />
-                                                                                        <p className="text-sm font-black uppercase tracking-widest opacity-50 mb-1">Interactive Tree Drawing Canvas</p>
+                                                                                    <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 space-y-6 text-center p-8">
+                                                                                        <div className="relative">
+                                                                                            <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full" />
+                                                                                            <Edit3 size={64} className="text-blue-500/40 relative z-10 animate-bounce-slow" />
+                                                                                        </div>
+                                                                                        <div className="space-y-2">
+                                                                                            <p className="text-xs font-black uppercase tracking-[0.3em] text-gray-400">Interactive drawing canvas</p>
+                                                                                            <p className="text-[10px] font-bold text-gray-600">Drag to start nodes, Shift to connect</p>
+                                                                                        </div>
+                                                                                        <button className="px-8 py-3 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase text-gray-300 hover:bg-white/10 transition-all">Enable Multiplayer</button>
                                                                                     </div>
                                                                                 ) : (
-                                                                                    <div className="grid grid-cols-2 h-full gap-px bg-white/5">
-                                                                                        <div className="p-6 bg-black/40 border-r border-white/5 flex flex-col">
-                                                                                            <div className="flex items-center gap-2 mb-4"><div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" /><span className="text-[10px] font-black uppercase text-blue-400 font-mono tracking-tighter">YOU: IMPLEMENTING LCA</span></div>
-                                                                                            <div className="flex-1 p-4 rounded-xl bg-black/60 font-mono text-[11px] text-green-400 leading-relaxed overflow-hidden">
-                                                                                                <div className="opacity-50">{'// Find Lowest Common Ancestor'}</div>
-                                                                                                <div>{'function findLCA(root, p, q) {'}</div>
-                                                                                                <div className="pl-4">{'if (!root) return null;'}</div>
-                                                                                                <div className="pl-4">{'if (root === p || root === q) return root;'}</div>
-                                                                                                <div className="pl-4 border-l-2 border-blue-500 ml-1 py-1">{'const left = findLCA(root.left, p, q);'}</div>
-                                                                                                <div>{'}'}</div>
+                                                                                    <div className="grid grid-cols-1 lg:grid-cols-2 h-full gap-px bg-white/5 overflow-hidden">
+                                                                                        <div className="p-8 bg-black/40 border-r border-white/5 flex flex-col group/coder">
+                                                                                            <div className="flex items-center justify-between mb-6">
+                                                                                                <div className="flex items-center gap-2">
+                                                                                                    <div className="w-2.5 h-2.5 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)] animate-pulse" />
+                                                                                                    <span className="text-[10px] font-black uppercase text-blue-400 font-mono tracking-widest">YOU: IMPLEMENTING LCA</span>
+                                                                                                </div>
+                                                                                                <div className="flex gap-1.5">
+                                                                                                    <div className="w-2.5 h-2.5 rounded-full bg-red-500/20" />
+                                                                                                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/20" />
+                                                                                                    <div className="w-2.5 h-2.5 rounded-full bg-green-500/20" />
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div className="flex-1 p-6 rounded-2xl bg-[#0a0f1d] border border-white/5 font-mono text-[13px] text-blue-300 leading-relaxed overflow-y-auto selection:bg-blue-500/30">
+                                                                                                <div className="opacity-40 mb-2">{'// Challenge: Find Lowest Common Ancestor'}</div>
+                                                                                                <div className="text-purple-400">{'function findLCA(root, p, q) {'}</div>
+                                                                                                <div className="pl-6"><span className="text-pink-500">{'if'}</span>{' (!root) '} <span className="text-pink-500">{'return'}</span> <span className="text-orange-400">{'null'}</span>{';'}</div>
+                                                                                                <div className="pl-6"><span className="text-pink-500">{'if'}</span>{' (root === p || root === q) '} <span className="text-pink-500">{'return'}</span>{' root;'}</div>
+                                                                                                <div className="pl-6 border-l-2 border-blue-500/50 bg-blue-500/5 my-1 py-1">
+                                                                                                    <span className="text-pink-500">{'const'}</span>{' left = findLCA(root.left, p, q);'}
+                                                                                                </div>
+                                                                                                <div className="pl-6">
+                                                                                                    <span className="text-pink-500">{'const'}</span>{' right = findLCA(root.right, p, q);'}
+                                                                                                </div>
+                                                                                                <div className="pl-6 mt-2 opacity-50 animate-pulse">|</div>
+                                                                                                <div className="text-purple-400">{'}'}</div>
                                                                                             </div>
                                                                                         </div>
-                                                                                        <div className="p-6 bg-black/40 flex flex-col">
-                                                                                            <div className="flex items-center gap-2 mb-4"><div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" /><span className="text-[10px] font-black uppercase text-red-100 font-mono tracking-tighter">Alex (Pro): 82% COMPLETED</span></div>
-                                                                                            <div className="flex-1 p-4 rounded-xl bg-black/60 font-mono text-[11px] text-yellow-500/80 leading-relaxed overflow-hidden italic">
-                                                                                                {'// Challenger is refactoring...'}
+                                                                                        <div className="p-8 bg-black/40 flex flex-col">
+                                                                                            <div className="flex items-center justify-between mb-6">
+                                                                                                <div className="flex items-center gap-2">
+                                                                                                    <div className="w-2.5 h-2.5 bg-rose-500 rounded-full shadow-[0_0_10px_rgba(244,63,94,0.5)] animate-pulse" />
+                                                                                                    <span className="text-[10px] font-black uppercase text-rose-400 font-mono tracking-widest">Alex (Opponent): 82%</span>
+                                                                                                </div>
+                                                                                                <span className="text-[9px] font-black text-white/30 uppercase">Spectating...</span>
+                                                                                            </div>
+                                                                                            <div className="flex-1 p-6 rounded-2xl bg-[#0a0f1d] border border-white/5 font-mono text-[13px] text-gray-500 leading-relaxed flex items-center justify-center italic text-center">
+                                                                                                <div>
+                                                                                                    <Activity size={24} className="mx-auto mb-4 opacity-20" />
+                                                                                                    Alex is refactoring to optimized O(1) space...
+                                                                                                </div>
                                                                                             </div>
                                                                                         </div>
                                                                                     </div>
                                                                                 )}
                                                                             </div>
                                                                         </div>
-                                                                        <div className={`w-full md:w-80 border-l p-6 flex flex-col ${darkMode ? 'bg-black/20 border-white/5' : 'bg-gray-50 border-gray-100'}`}>
-                                                                            <h5 className="text-[10px] font-black uppercase text-gray-500 mb-6 tracking-widest text-center">Live Peers</h5>
+
+                                                                        <div className={`w-full md:w-80 border-l p-8 flex flex-col ${darkMode ? 'bg-black/20 border-white/5' : 'bg-gray-50 border-gray-100'}`}>
+                                                                            <div className="flex flex-col items-center mb-10">
+                                                                                <div className="relative group/avatar cursor-pointer mb-4">
+                                                                                    <div className="absolute inset-0 bg-blue-500/50 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                                                    <div className="w-20 h-20 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white text-3xl font-black shadow-xl relative z-10 ring-4 ring-offset-4 ring-[#0f172a] ring-offset-[#0f172a]">M</div>
+                                                                                    <div className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-4 border-[#0f172a] rounded-full z-20" />
+                                                                                </div>
+                                                                                <h5 className="text-[13px] font-black uppercase tracking-widest text-center">Me (Active)</h5>
+                                                                            </div>
+
+                                                                            <h5 className="text-[10px] font-black uppercase text-gray-500 mb-6 tracking-[0.2em] text-center">Room Members</h5>
                                                                             <div className="space-y-4 flex-1">
                                                                                 {[
-                                                                                    { name: 'Alex (Expert)', x: 'E', color: 'bg-blue-500' },
-                                                                                    { name: 'Sarah (React Dev)', x: 'S', color: 'bg-purple-500' },
-                                                                                    { name: 'Mike (Learner)', x: 'M', color: 'bg-orange-500' }
+                                                                                    { name: 'Alex (Expert)', x: 'A', color: 'from-blue-500 to-cyan-500' },
+                                                                                    { name: 'Sarah (Elite)', x: 'S', color: 'from-purple-500 to-rose-500' },
+                                                                                    { name: 'Mike (Learner)', x: 'M', color: 'from-orange-500 to-amber-500' }
                                                                                 ].map((p, i) => (
-                                                                                    <div key={i} className={`p-3 rounded-2xl flex items-center justify-between transition-all hover:translate-x-1 ${darkMode ? 'bg-white/5' : 'bg-white shadow-sm'}`}>
-                                                                                        <div className="flex items-center gap-3">
-                                                                                            <div className={`w-8 h-8 ${p.color} rounded-full flex items-center justify-center text-white font-black text-[10px]`}>{p.x}</div>
-                                                                                            <span className={`text-[11px] font-black ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{p.name}</span>
+                                                                                    <div key={i} className={`p-4 rounded-2xl flex items-center justify-between transition-all hover:bg-white/5 group/member cursor-default border border-transparent hover:border-white/5 ${darkMode ? '' : 'bg-white shadow-sm'}`}>
+                                                                                        <div className="flex items-center gap-4">
+                                                                                            <div className={`w-10 h-10 bg-gradient-to-tr ${p.color} rounded-xl flex items-center justify-center text-white font-black text-xs shadow-lg group-hover/member:rotate-12 transition-transform`}>{p.x}</div>
+                                                                                            <div className="flex flex-col">
+                                                                                                <span className={`text-[11px] font-black ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{p.name}</span>
+                                                                                                <span className="text-[9px] font-bold text-gray-500 uppercase">Typing...</span>
+                                                                                            </div>
                                                                                         </div>
                                                                                         <div className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
                                                                                     </div>
                                                                                 ))}
                                                                             </div>
-                                                                            <div className="mt-6 space-y-3">
-                                                                                <button className="w-full py-4 bg-blue-500 text-white rounded-2xl text-xs font-black uppercase shadow-lg shadow-blue-500/20 active:scale-95 transition-all">Start Peer Call</button>
+
+                                                                            <div className="mt-8 space-y-3">
+                                                                                <button className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-95 transition-all">Start Voice Call</button>
+                                                                                <button className="w-full py-4 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border border-white/5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all">Leave Room</button>
                                                                             </div>
                                                                         </div>
                                                                     </motion.div>
@@ -2572,185 +2757,758 @@ export default function Dashboard() {
 
                                                                 {/* 🧠 3. Recursion Adaptive Engine */}
                                                                 {roadmapSubView === 'recursive_quiz' && (
-                                                                    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className={`w-full max-w-4xl p-10 rounded-[4rem] border ${darkMode ? 'bg-[#0f172a] border-white/10' : 'bg-white border-gray-100'} shadow-2xl relative overflow-hidden`}>
-                                                                        <div className="absolute top-0 left-0 w-full h-1 bg-white/5">
-                                                                            <motion.div initial={{ width: 0 }} animate={{ width: '65%' }} className="h-full bg-purple-500" />
-                                                                        </div>
-
-                                                                        <div className="flex items-center justify-between mb-10">
-                                                                            <div className="flex items-center gap-4">
-                                                                                <div className="w-14 h-14 bg-purple-500/10 rounded-[2rem] flex items-center justify-center text-purple-500 shadow-xl shadow-purple-500/10"><Brain size={32} /></div>
-                                                                                <div>
-                                                                                    <h4 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Recursion Adaptive Engine</h4>
-                                                                                    <p className="text-sm font-bold text-gray-500">AI FOCUS: Base Case & Stack Simulation</p>
-                                                                                </div>
+                                                                    <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className={`w-full max-w-5xl p-1 relative overflow-hidden rounded-[4rem] ${darkMode ? 'bg-gradient-to-b from-purple-500/20 to-transparent' : 'bg-gradient-to-b from-purple-100 to-transparent'}`}>
+                                                                        <div className={`p-10 rounded-[3.8rem] border ${darkMode ? 'bg-[#0f172a] border-white/10' : 'bg-white border-gray-100'} shadow-2xl relative overflow-hidden`}>
+                                                                            <div className="absolute top-0 left-0 w-full h-1.5 bg-black/10">
+                                                                                <motion.div initial={{ width: 0 }} animate={{ width: '65%' }} className="h-full bg-gradient-to-r from-purple-600 to-pink-600 shadow-[0_0_15px_rgba(168,85,247,0.5)]" />
                                                                             </div>
-                                                                        </div>
 
-                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-10">
-                                                                            <div className="space-y-8">
-                                                                                <div className={`p-8 rounded-[3rem] border ${darkMode ? 'bg-white/5 border-white/5' : 'bg-gray-50 border-gray-100'} relative`}>
-                                                                                    <p className={`text-xl font-black leading-relaxed mb-6 mt-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Identify the correct base case for calculating the maximum depth of a binary tree.</p>
-                                                                                    <div className="space-y-3">
-                                                                                        {[
-                                                                                            { text: 'if (root === null) return 0;', status: 'active' },
-                                                                                            { text: 'if (root.left === null) return 1;', status: 'idle' }
-                                                                                        ].map((opt, i) => (
-                                                                                            <button key={i} className={`w-full p-5 rounded-2xl border text-left text-xs font-black transition-all hover:translate-x-2 ${darkMode ? 'bg-black/20 border-white/5 hover:border-purple-500/30 text-gray-300' : 'bg-white border-gray-100 hover:shadow-lg text-gray-600 outline-none'}`}>
-                                                                                                {opt.text}
-                                                                                            </button>
-                                                                                        ))}
+                                                                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 gap-6">
+                                                                                <div className="flex items-center gap-6">
+                                                                                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-[2rem] flex items-center justify-center text-white shadow-xl shadow-purple-500/20"><Brain size={36} /></div>
+                                                                                    <div>
+                                                                                        <h4 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'} tracking-tight`}>Adaptive Engine 2.0</h4>
+                                                                                        <div className="flex items-center gap-3 mt-1">
+                                                                                            <span className="px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-400 text-[9px] font-black uppercase tracking-widest border border-purple-500/20">Recursion</span>
+                                                                                            <p className="text-xs font-bold text-gray-500">Mastering Base Cases</p>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="flex items-center gap-4 px-6 py-3 bg-black/20 rounded-2xl border border-white/5 backdrop-blur-md">
+                                                                                    <div className="text-right">
+                                                                                        <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Confidence Score</p>
+                                                                                        <p className="text-lg font-black text-purple-400">84%</p>
+                                                                                    </div>
+                                                                                    <div className="w-px h-8 bg-white/10" />
+                                                                                    <div className="text-right">
+                                                                                        <p className={`text-[9px] font-black uppercase tracking-widest ${darkMode ? 'text-white/30' : 'text-gray-400'}`}>Time Left</p>
+                                                                                        <p className="text-lg font-black text-rose-500 font-mono">04:52</p>
                                                                                     </div>
                                                                                 </div>
                                                                             </div>
-                                                                            <div className="space-y-6 flex flex-col justify-center">
-                                                                                <h5 className="text-[10px] font-black uppercase text-gray-500 tracking-widest text-center mb-2">AI STACK SIMULATION</h5>
-                                                                                <div className="space-y-2 relative flex flex-col items-center">
-                                                                                    {[4, 3, 2].map((n, idx) => (
-                                                                                        <motion.div
-                                                                                            key={n}
-                                                                                            initial={{ y: -20, opacity: 0 }}
-                                                                                            animate={{ y: 0, opacity: 1 - (idx * 0.2) }}
-                                                                                            className={`w-full p-4 border rounded-2xl text-center text-xs font-black font-mono flex items-center justify-between ${darkMode ? 'bg-purple-500/10 border-purple-500/20 text-purple-300' : 'bg-purple-50 border-purple-100 text-purple-600'}`}
-                                                                                        >
-                                                                                            <span>maxDepth(root_{n})</span>
-                                                                                        </motion.div>
-                                                                                    ))}
+
+                                                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-10">
+                                                                                <div className="space-y-8">
+                                                                                    <div className={`p-8 rounded-[3rem] border ${darkMode ? 'bg-gradient-to-br from-white/5 to-transparent border-white/5' : 'bg-gray-50 border-gray-100'} relative group`}>
+                                                                                        <div className="flex items-center gap-3 mb-6">
+                                                                                            <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500 font-black text-xs">04</div>
+                                                                                            <span className="text-[10px] font-black uppercase text-purple-400 tracking-widest">Logic Selection</span>
+                                                                                        </div>
+                                                                                        <p className={`text-xl font-black leading-relaxed mb-8 ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>Which base case correctly prevents infinite recursion when calculating binary tree depth?</p>
+                                                                                        <div className="space-y-4">
+                                                                                            {[
+                                                                                                { text: 'if (root === null) return 0;', status: 'active', meta: 'Safe termination' },
+                                                                                                { text: 'if (root.left === null) return 1;', status: 'idle', meta: 'Partial check' },
+                                                                                                { text: 'if (!node) return -1;', status: 'idle', meta: 'Height offset' }
+                                                                                            ].map((opt, i) => (
+                                                                                                <button key={i} className={`w-full p-6 rounded-2xl border text-left transition-all relative group/opt ${i === 0
+                                                                                                    ? 'bg-purple-600 border-purple-500 text-white shadow-lg shadow-purple-500/20'
+                                                                                                    : darkMode ? 'bg-black/20 border-white/5 text-gray-400 hover:border-white/20' : 'bg-white border-gray-100'
+                                                                                                    }`}>
+                                                                                                    <div className="flex items-center justify-between">
+                                                                                                        <span className="text-[13px] font-black font-mono">{opt.text}</span>
+                                                                                                        <span className={`text-[9px] font-black uppercase tracking-tighter opacity-0 group-hover/opt:opacity-40 transition-opacity`}>{opt.meta}</span>
+                                                                                                    </div>
+                                                                                                </button>
+                                                                                            ))}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="flex flex-col space-y-6">
+                                                                                    <div className={`p-8 rounded-[3rem] border ${darkMode ? 'bg-black/40 border-white/5 shadow-inner' : 'bg-purple-50/50 border-purple-100'} flex-1 flex flex-col`}>
+                                                                                        <h5 className="text-[10px] font-black uppercase text-gray-500 tracking-[0.3em] text-center mb-8">Live Stack Simulation</h5>
+                                                                                        <div className="space-y-3 relative flex flex-col items-center flex-1 justify-center max-w-[280px] mx-auto w-full">
+                                                                                            {[5, 4, 3, 2].map((n, idx) => (
+                                                                                                <motion.div
+                                                                                                    key={n}
+                                                                                                    initial={{ y: 20, opacity: 0 }}
+                                                                                                    animate={{ y: 0, opacity: 1 - (idx * 0.15) }}
+                                                                                                    whileHover={{ scale: 1.05, x: 10 }}
+                                                                                                    className={`w-full p-4 border rounded-2xl text-center text-xs font-black font-mono flex items-center justify-between shadow-lg ${idx === 0
+                                                                                                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 border-purple-400 text-white'
+                                                                                                        : darkMode ? 'bg-purple-900/20 border-purple-500/20 text-purple-300' : 'bg-white border-purple-100 text-purple-600'
+                                                                                                        }`}
+                                                                                                >
+                                                                                                    <div className="flex items-center gap-2">
+                                                                                                        <div className={`w-2 h-2 rounded-full ${idx === 0 ? 'bg-white animate-pulse' : 'bg-purple-500/40'}`} />
+                                                                                                        <span>depth(node_{n})</span>
+                                                                                                    </div>
+                                                                                                    {idx === 0 && <span className="text-[8px] bg-white/20 px-1.5 py-0.5 rounded uppercase">Active</span>}
+                                                                                                </motion.div>
+                                                                                            ))}
+                                                                                            <div className="absolute -bottom-6 flex flex-col items-center">
+                                                                                                <div className="w-1 h-8 bg-gradient-to-b from-purple-500/20 to-transparent" />
+                                                                                                <span className="text-[8px] font-black text-purple-500/40 uppercase tracking-widest">Heap Allocation</span>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
+
+                                                                            <div className="flex items-center justify-between">
+                                                                                <div className="flex items-center gap-4">
+                                                                                    <div className="flex -space-x-3">
+                                                                                        {[1, 2, 3].map(i => <div key={i} className="w-10 h-10 rounded-full border-4 border-[#0f172a] bg-gray-700 shadow-xl" />)}
+                                                                                    </div>
+                                                                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Analyzed by 4.2k learners today</p>
+                                                                                </div>
+                                                                                <button className="group px-14 py-5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-[2.5rem] font-black text-sm shadow-2xl shadow-purple-500/30 active:scale-95 transition-all uppercase tracking-[0.2em] flex items-center gap-4">
+                                                                                    Verify Logic
+                                                                                    <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />
+                                                                                </button>
+                                                                            </div>
                                                                         </div>
-                                                                        <button className="px-12 py-4 bg-purple-500 text-white rounded-[2rem] font-black text-sm shadow-xl shadow-purple-500/30 active:scale-95 transition-all uppercase tracking-widest">Submit Logic</button>
                                                                     </motion.div>
                                                                 )}
 
                                                                 {/* 🎥 4. Smart Concept Booster */}
                                                                 {roadmapSubView === 'booster' && (
-                                                                    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className={`w-full max-w-4xl rounded-[4rem] border shadow-2xl relative overflow-hidden flex flex-col ${darkMode ? 'bg-[#0f172a] border-white/10' : 'bg-white border-gray-100'}`}>
-                                                                        <div className="aspect-video bg-black/95 relative flex items-center justify-center group overflow-hidden">
-                                                                            <button className="w-24 h-24 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all shadow-2xl shadow-black/50 z-10 group-hover:bg-blue-600">
-                                                                                <Play size={40} className="fill-white translate-x-1" />
+                                                                    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className={`w-full max-w-5xl rounded-[4rem] border shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] relative overflow-hidden flex flex-col ${darkMode ? 'bg-[#0f172a] border-white/10' : 'bg-white border-gray-100'}`}>
+                                                                        <div className="aspect-video bg-[#050810] relative flex items-center justify-center group overflow-hidden">
+                                                                            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-30 grayscale group-hover:grayscale-0 transition-all duration-1000 scale-110 group-hover:scale-100" />
+                                                                            <div className="absolute inset-0 bg-gradient-to-t from-[#050810] via-transparent to-transparent" />
+
+                                                                            <button className="w-28 h-28 bg-blue-600/90 backdrop-blur-xl rounded-full flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all shadow-[0_0_50px_rgba(37,99,235,0.5)] z-20 overflow-hidden relative group/play">
+                                                                                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-600 opacity-0 group-hover/play:opacity-100 transition-opacity" />
+                                                                                <Play size={44} className="fill-white translate-x-1 relative z-10" />
                                                                             </button>
+
+                                                                            <div className="absolute bottom-8 left-8 right-8 flex items-center justify-between z-20">
+                                                                                <div className="flex items-center gap-4">
+                                                                                    <div className="p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 text-white"><MonitorPlay size={24} /></div>
+                                                                                    <div>
+                                                                                        <h5 className="text-xl font-black text-white tracking-tight">Visualizing Recursion: Detailed Deep Dive</h5>
+                                                                                        <p className="text-xs font-bold text-white/50">Module 04 • 12:45 Duration</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="flex items-center gap-2 px-4 py-2 bg-black/40 backdrop-blur-md rounded-full border border-white/5">
+                                                                                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                                                                                    <span className="text-[10px] font-black text-white uppercase tracking-widest">4K Ultra HD</span>
+                                                                                </div>
+                                                                            </div>
                                                                         </div>
 
-                                                                        <div className="p-10">
-                                                                            <h4 className="text-2xl font-black text-white mb-1">Visualizing Recursion: The Calling Stack</h4>
-                                                                            <button className="mt-8 px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-[2rem] font-black text-xs shadow-xl shadow-blue-500/30 active:scale-95 transition-all uppercase tracking-widest">Start Mini Test 🎉</button>
+                                                                        <div className="p-12 flex flex-col md:flex-row items-center justify-between gap-8">
+                                                                            <div className="max-w-xl">
+                                                                                <h4 className={`text-3xl font-black mb-4 tracking-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>Master the Calling Stack</h4>
+                                                                                <p className={`text-base font-medium leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>AI identifies this as your #1 blocker. This visual breakdown explains how memory frames are created and destroyed during recursive calls.</p>
+                                                                            </div>
+                                                                            <div className="flex flex-col gap-4 w-full md:w-auto">
+                                                                                <button className="group px-12 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-[2.5rem] font-black text-sm shadow-2xl shadow-blue-500/30 active:scale-95 transition-all uppercase tracking-[0.2em] flex items-center justify-center gap-4">
+                                                                                    Start Analysis Quiz
+                                                                                    <Sparkles size={18} className="group-hover:rotate-12 transition-transform" />
+                                                                                </button>
+                                                                                <button className="px-12 py-5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-[2.5rem] font-black text-xs text-gray-400 hover:text-white transition-all uppercase tracking-widest text-center">Download Notes (PDF)</button>
+                                                                            </div>
                                                                         </div>
                                                                     </motion.div>
                                                                 )}
 
                                                                 {/* 💼 5. Interview Simulation Mode */}
                                                                 {roadmapSubView === 'interview_sim' && (
-                                                                    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className={`w-full max-w-6xl h-[85vh] rounded-[3rem] border overflow-hidden flex flex-col ${darkMode ? 'bg-[#0f172a] border-white/10' : 'bg-white border-gray-100'} shadow-2xl relative`}>
-                                                                        <div className={`p-8 border-b flex items-center justify-between z-10 ${darkMode ? 'bg-black/40 border-white/5' : 'bg-gray-50 border-gray-100 shadow-sm'}`}>
-                                                                            <h4 className={`text-xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Interview Simulation: Lowest Common Ancestor</h4>
-                                                                            <div className="text-2xl font-black font-mono text-red-500 tabular-nums">42:15</div>
+                                                                    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className={`w-full max-w-7xl h-[88vh] rounded-[3.5rem] border shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col ${darkMode ? 'bg-[#0f172a] border-white/10' : 'bg-white border-gray-100'} relative`}>
+                                                                        <div className={`p-8 border-b flex flex-col sm:flex-row items-center justify-between gap-6 z-10 ${darkMode ? 'bg-black/60 border-white/5 backdrop-blur-xl' : 'bg-white/80 border-gray-100 shadow-sm backdrop-blur-md'}`}>
+                                                                            <div className="flex items-center gap-6">
+                                                                                <div className="w-14 h-14 bg-rose-500/10 rounded-2xl flex items-center justify-center text-rose-500 shadow-xl shadow-rose-500/5"><Briefcase size={28} /></div>
+                                                                                <div>
+                                                                                    <h4 className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-gray-900'} tracking-tight`}>FAANG Simulation: LCA</h4>
+                                                                                    <div className="flex items-center gap-3 mt-1">
+                                                                                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">
+                                                                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                                                                            <span className="text-[9px] font-black text-blue-400 uppercase">Google Mode</span>
+                                                                                        </div>
+                                                                                        <span className="text-[10px] font-bold text-gray-500 italic">Target: Silicon Valley Level 4</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+
+                                                                            <div className="flex items-center gap-6">
+                                                                                <div className="flex flex-col items-end">
+                                                                                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Session Timer</span>
+                                                                                    <div className="text-3xl font-black font-mono text-rose-500 tabular-nums tracking-tighter shadow-rose-500/20 drop-shadow-lg flex items-center gap-2">
+                                                                                        <Clock size={20} className="animate-pulse" />
+                                                                                        42:15
+                                                                                    </div>
+                                                                                </div>
+                                                                                <button className="px-8 py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-rose-600/20 active:scale-95 transition-all hover:bg-rose-500">End Session</button>
+                                                                            </div>
                                                                         </div>
 
                                                                         <div className="flex-1 flex overflow-hidden">
-                                                                            <div className="flex-1 p-8 overflow-y-auto">
-                                                                                <p className={`text-base font-bold leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                                                                    Given a binary search tree (BST), find the lowest common ancestor (LCA) node of two given nodes in the BST.
-                                                                                </p>
+                                                                            <div className={`w-[400px] border-r overflow-y-auto p-10 space-y-8 ${darkMode ? 'bg-black/20 border-white/5' : 'bg-gray-50/50'}`}>
+                                                                                <div className="space-y-4">
+                                                                                    <h5 className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Problem Statement</h5>
+                                                                                    <p className={`text-lg font-black leading-relaxed tracking-tight ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                                                                                        Lowest Common Ancestor of a Binary Search Tree
+                                                                                    </p>
+                                                                                    <p className={`text-sm font-medium leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                                                        Given a BST, find the lowest common ancestor (LCA) node of two given nodes <code className="px-1.5 py-0.5 rounded bg-black/20 text-blue-400">p</code> and <code className="px-1.5 py-0.5 rounded bg-black/20 text-blue-400">q</code>.
+                                                                                    </p>
+                                                                                </div>
+
+                                                                                <div className="space-y-4">
+                                                                                    <h5 className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Constraints</h5>
+                                                                                    <div className="space-y-2">
+                                                                                        {['Nodes count: 2 to 10^5', 'Value range: -10^9 to 10^9', 'All node values are unique'].map((c, i) => (
+                                                                                            <div key={i} className="flex items-center gap-3 text-xs font-bold text-gray-500">
+                                                                                                <div className="w-1 h-1 rounded-full bg-blue-500/40" />
+                                                                                                {c}
+                                                                                            </div>
+                                                                                        ))}
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                <div className={`p-6 rounded-3xl border ${darkMode ? 'bg-amber-500/5 border-amber-500/10' : 'bg-amber-50 border-amber-100'}`}>
+                                                                                    <div className="flex items-center gap-2 mb-3">
+                                                                                        <Lightbulb size={16} className="text-amber-500" />
+                                                                                        <span className="text-[10px] font-black uppercase text-amber-500 tracking-widest">AI Hint Agent</span>
+                                                                                    </div>
+                                                                                    <p className="text-[11px] font-bold text-amber-600/80 leading-relaxed italic">"Remember the property of a BST: for any node, all nodes in the left subtree are smaller, and all in the right are larger."</p>
+                                                                                </div>
                                                                             </div>
-                                                                            <div className={`w-3/5 border-l flex flex-col ${darkMode ? 'bg-[#0a0f1d] border-white/5' : 'bg-gray-900 border-gray-800'}`}>
-                                                                                <div className="flex-1 p-10 font-mono text-[13px] leading-relaxed overflow-y-auto">
-                                                                                    <div className="text-purple-400 opacity-60">/** JavaScript Editor ... */</div>
+
+                                                                            <div className={`flex-1 flex flex-col ${darkMode ? 'bg-[#050810]' : 'bg-gray-900 border-gray-800'}`}>
+                                                                                <div className="px-8 py-4 border-b border-white/5 flex items-center justify-between bg-black/40">
+                                                                                    <div className="flex items-center gap-4">
+                                                                                        <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-lg border border-white/5">
+                                                                                            <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                                                                                            <span className="text-[10px] font-black text-gray-400 uppercase font-mono">solution.js</span>
+                                                                                        </div>
+                                                                                        <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Read-only mode: OFF</span>
+                                                                                    </div>
+                                                                                    <div className="flex items-center gap-3">
+                                                                                        <div className="w-2.5 h-2.5 rounded-full bg-red-500/20" />
+                                                                                        <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/20" />
+                                                                                        <div className="w-2.5 h-2.5 rounded-full bg-green-500/20" />
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="flex-1 p-10 font-mono text-[14px] leading-relaxed overflow-y-auto selection:bg-rose-500/30">
+                                                                                    <div className="flex gap-6 mb-2">
+                                                                                        <span className="text-white/20 text-right w-6 select-none italic text-[11px]">1</span>
+                                                                                        <span className="text-purple-400">/**</span>
+                                                                                    </div>
+                                                                                    <div className="flex gap-6 mb-2">
+                                                                                        <span className="text-white/20 text-right w-6 select-none italic text-[11px]">2</span>
+                                                                                        <span className="text-purple-400"> * Definition for a binary tree node.</span>
+                                                                                    </div>
+                                                                                    <div className="flex gap-6 mb-2">
+                                                                                        <span className="text-white/20 text-right w-6 select-none italic text-[11px]">3</span>
+                                                                                        <span className="text-purple-400"> */</span>
+                                                                                    </div>
+                                                                                    <div className="flex gap-6 mb-2">
+                                                                                        <span className="text-white/20 text-right w-6 select-none italic text-[11px]">4</span>
+                                                                                        <span className="text-pink-500">var</span> <span className="text-blue-400">lowestCommonAncestor</span> = <span className="text-pink-500">function</span>(root, p, q) {'{'}
+                                                                                    </div>
+                                                                                    <div className="flex gap-6 mb-2">
+                                                                                        <span className="text-white/20 text-right w-6 select-none italic text-[11px]">5</span>
+                                                                                        <span className="ml-8 text-white/40 animate-pulse">|</span>
+                                                                                    </div>
+                                                                                    <div className="flex gap-6 mb-2">
+                                                                                        <span className="text-white/20 text-right w-6 select-none italic text-[11px]">6</span>
+                                                                                        <span className="text-white/60">{'}'};</span>
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                <div className="p-8 border-t border-white/5 bg-black/40 flex items-center justify-between">
+                                                                                    <div className="flex items-center gap-4">
+                                                                                        <button className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-[10px] font-black text-gray-400 hover:text-white transition-all uppercase tracking-widest">Run Code</button>
+                                                                                        <button className="flex items-center gap-2 text-[10px] font-black text-blue-400 uppercase tracking-widest hover:text-blue-300 transition-colors">
+                                                                                            <RefreshCw size={14} />
+                                                                                            Reset Workspace
+                                                                                        </button>
+                                                                                    </div>
+                                                                                    <div className="flex items-center gap-6">
+                                                                                        <div className="flex items-center gap-2">
+                                                                                            <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
+                                                                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Real-time Feedback: ON</span>
+                                                                                        </div>
+                                                                                        <button className="px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 active:scale-95 transition-all">Submit Solution</button>
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
                                                                     </motion.div>
                                                                 )}
-                                                            </div>
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
+                                                </div>
+                                            )}
+
+                                            {activeModal === 'performance' && (
+                                                <div className="space-y-8 min-h-[500px] animate-in fade-in slide-in-from-bottom-6 duration-500">
+                                                    {/* Performance Navigation */}
+                                                    <div className="flex gap-2 p-1 bg-gray-500/5 rounded-2xl w-fit overflow-x-auto scrollbar-hide">
+                                                        {[
+                                                            { id: 'concept', label: 'Concept', icon: BookOpen },
+                                                            { id: 'lab', label: 'Profiling Lab', icon: Activity },
+                                                            { id: 'patterns', label: 'Patterns', icon: Layers },
+                                                            { id: 'analyzer', label: 'AI Analyzer', icon: Brain },
+                                                            { id: 'challenge', label: 'Challenge', icon: Zap },
+                                                            { id: 'report', label: 'Dashboard', icon: LineChart }
+                                                        ].map(tab => (
+                                                            <button
+                                                                key={tab.id}
+                                                                onClick={() => setPerformanceView(tab.id)}
+                                                                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shrink-0 ${performanceView === tab.id ? 'bg-emerald-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                                                            >
+                                                                <tab.icon size={12} />
+                                                                {tab.label}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+
+                                                    <AnimatePresence mode="wait">
+                                                        {performanceView === 'concept' && (
+                                                            <motion.div key="concept" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
+                                                                <div className={`p-8 rounded-[2.5rem] border relative overflow-hidden ${darkMode ? 'bg-emerald-500/5 border-emerald-500/10' : 'bg-emerald-50 border-emerald-100'}`}>
+                                                                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                                                                    <div className="relative z-10 space-y-4">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className="p-3 bg-emerald-500 rounded-2xl text-white"><BookOpen size={24} /></div>
+                                                                            <div>
+                                                                                <h4 className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Performance Foundation</h4>
+                                                                                <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest">Mastering Complexity & Efficiency</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                                                                            <div className={`p-6 rounded-3xl ${darkMode ? 'bg-black/40' : 'bg-white'} border border-emerald-500/10`}>
+                                                                                <div className="flex items-center gap-2 mb-3 text-emerald-500">
+                                                                                    <Clock size={18} />
+                                                                                    <span className="text-xs font-black uppercase tracking-widest">Complexity Deep Dive</span>
+                                                                                </div>
+                                                                                <p className="text-xs font-medium text-gray-400 leading-relaxed mb-4">Big-O practical understanding & Amortized analysis.</p>
+                                                                                <div className="space-y-2">
+                                                                                    {[
+                                                                                        { l: 'O(log n) - Logarithmic', v: 'Highly Efficient' },
+                                                                                        { l: 'O(n) - Linear Time', v: 'Standard/Safe' },
+                                                                                        { l: 'O(n log n) - Sorting', v: 'Optimized Sort' },
+                                                                                        { l: 'O(n²) - Quadratic', v: 'Avoid for Large N' }
+                                                                                    ].map((o, i) => (
+                                                                                        <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-emerald-500/10 text-[10px] font-bold text-emerald-400">
+                                                                                            <span>{o.l}</span>
+                                                                                            <span className="text-[8px] opacity-60 uppercase">{o.v}</span>
+                                                                                        </div>
+                                                                                    ))}
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className={`p-6 rounded-3xl ${darkMode ? 'bg-black/40' : 'bg-white'} border border-emerald-500/10`}>
+                                                                                <div className="flex items-center gap-2 mb-3 text-emerald-500">
+                                                                                    <Layers size={18} />
+                                                                                    <span className="text-xs font-black uppercase tracking-widest">Trade-offs & Space</span>
+                                                                                </div>
+                                                                                <p className="text-xs font-medium text-gray-400 leading-relaxed mb-4">Time vs Space: Choosing between speed and memory capacity.</p>
+                                                                                <div className={`p-4 rounded-xl border border-dashed text-[10px] font-mono mb-3 ${darkMode ? 'border-white/10 text-gray-500' : 'border-gray-200'}`}>
+                                                                                    {`// Memoization: +Space, -Time\nconst cache = new Map();\nfunction fast(n) {\n  if(cache.has(n)) return cache.get(n);\n}`}
+                                                                                </div>
+                                                                                <div className="flex items-center gap-2 text-[9px] font-black text-emerald-500 uppercase tracking-widest">
+                                                                                    <Check size={12} /> Amortized Time Advantage
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        {/* Real-world Bottlenecks */}
+                                                                        <div className="mt-4">
+                                                                            <h5 className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3 text-center">Real-world Performance Bottlenecks</h5>
+                                                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                                                {[
+                                                                                    { label: 'Nested Loops', desc: 'Exponential delay' },
+                                                                                    { label: 'React Re-renders', desc: 'UI stuttering' },
+                                                                                    { label: 'Expensive DB', desc: 'Slow response' },
+                                                                                    { label: 'Memory Leaks', desc: 'App crashes' }
+                                                                                ].map((b, i) => (
+                                                                                    <div key={i} className="p-3 rounded-2xl bg-black/5 dark:bg-white/5 border border-transparent hover:border-emerald-500/20 transition-all text-center">
+                                                                                        <div className="text-[10px] font-black text-emerald-500 uppercase mb-1">{b.label}</div>
+                                                                                        <div className="text-[8px] font-bold text-gray-500 uppercase">{b.desc}</div>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <button onClick={() => setPerformanceView('lab')} className="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black text-lg shadow-xl shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-3">
+                                                                    Enter Interactive Profiling Lab <Activity size={20} />
+                                                                </button>
+                                                            </motion.div>
+                                                        )}
+
+                                                        {performanceView === 'lab' && (
+                                                            <motion.div key="lab" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
+                                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                                    <div className="space-y-4">
+                                                                        <div className="flex items-center justify-between">
+                                                                            <h4 className="text-sm font-black uppercase tracking-widest text-emerald-500">Solution A (Naïve)</h4>
+                                                                            <span className="text-[10px] font-bold text-red-500 bg-red-500/10 px-2 py-1 rounded-lg">High Latency</span>
+                                                                        </div>
+                                                                        <div className={`p-6 rounded-[2rem] border overflow-hidden relative ${darkMode ? 'bg-[#050810] border-white/5' : 'bg-gray-900 border-gray-800'}`}>
+                                                                            <pre className="text-xs font-mono text-emerald-400 leading-relaxed">
+                                                                                {`function findDuplicates(arr) {\n  let result = [];\n  for(let i=0; i<arr.length; i++) {\n    for(let j=i+1; j<arr.length; j++) {\n      if(arr[i] === arr[j]) {\n        result.push(arr[i]);\n      }\n    }\n  }\n  return result;\n}`}
+                                                                            </pre>
+                                                                        </div>
+                                                                        <div className="grid grid-cols-2 gap-3">
+                                                                            <div className="p-4 rounded-2xl bg-black/20 border border-white/5 text-center">
+                                                                                <div className="text-[9px] font-black text-gray-500 uppercase">Exec Time</div>
+                                                                                <div className="text-sm font-black text-red-500">~245ms</div>
+                                                                            </div>
+                                                                            <div className="p-4 rounded-2xl bg-black/20 border border-white/5 text-center">
+                                                                                <div className="text-[9px] font-black text-gray-500 uppercase">Memory</div>
+                                                                                <div className="text-sm font-black text-red-500">~12.4MB</div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="space-y-4">
+                                                                        <div className="flex items-center justify-between">
+                                                                            <h4 className="text-sm font-black uppercase tracking-widest text-emerald-500">Solution B (Optimized)</h4>
+                                                                            <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-lg">Peak Performance</span>
+                                                                        </div>
+                                                                        <div className={`p-6 rounded-[2rem] border overflow-hidden relative ${darkMode ? 'bg-[#050810] border-white/5' : 'bg-gray-900 border-gray-800'}`}>
+                                                                            <pre className="text-xs font-mono text-blue-400 leading-relaxed">
+                                                                                {`function findDuplicates(arr) {\n  const seen = new Set();\n  const result = new Set();\n  for(const x of arr) {\n    if(seen.has(x)) result.add(x);\n    seen.add(x);\n  }\n  return [...result];\n}`}
+                                                                            </pre>
+                                                                        </div>
+                                                                        <div className="grid grid-cols-2 gap-3">
+                                                                            <div className="p-4 rounded-2xl bg-black/20 border border-emerald-500/20 text-center">
+                                                                                <div className="text-[9px] font-black text-gray-500 uppercase">Exec Time</div>
+                                                                                <div className="text-sm font-black text-emerald-400">~12ms</div>
+                                                                            </div>
+                                                                            <div className="p-4 rounded-2xl bg-black/20 border border-emerald-500/20 text-center">
+                                                                                <div className="text-[9px] font-black text-gray-500 uppercase">Memory</div>
+                                                                                <div className="text-sm font-black text-emerald-400">~4.2MB</div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className={`p-6 rounded-3xl border ${darkMode ? 'bg-emerald-500/5 border-emerald-500/10' : 'bg-emerald-50 border-emerald-100'}`}>
+                                                                    <h5 className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-4 text-center">Performance Comparison Visualization</h5>
+                                                                    <div className="h-40 w-full flex items-end gap-1 px-4">
+                                                                        {[10, 25, 45, 70, 95, 120, 160, 210, 245].map((h, i) => (
+                                                                            <motion.div
+                                                                                key={i}
+                                                                                initial={{ height: 0 }}
+                                                                                animate={{ height: `${(h / 245) * 100}%` }}
+                                                                                className="flex-1 bg-red-500/40 rounded-t-lg relative group"
+                                                                            >
+                                                                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-black text-red-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Naïve O(n²)</div>
+                                                                            </motion.div>
+                                                                        ))}
+                                                                        {[2, 4, 5, 8, 9, 10, 11, 11, 12].map((h, i) => (
+                                                                            <motion.div
+                                                                                key={i}
+                                                                                initial={{ height: 0 }}
+                                                                                animate={{ height: `${(h / 245) * 100}%` }}
+                                                                                className="flex-1 bg-emerald-500 rounded-t-lg relative group"
+                                                                            >
+                                                                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-black text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Opti O(n)</div>
+                                                                            </motion.div>
+                                                                        ))}
+                                                                    </div>
+                                                                    <div className="flex justify-between mt-2 text-[8px] font-black text-gray-500 uppercase tracking-widest px-4">
+                                                                        <span>Input Size (n) {'->'}</span>
+                                                                        <span>Execution Time (ms)</span>
+                                                                    </div>
+                                                                </div>
+                                                            </motion.div>
+                                                        )}
+
+                                                        {performanceView === 'patterns' && (
+                                                            <motion.div key="patterns" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
+                                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                                    {[
+                                                                        {
+                                                                            title: 'Algorithm Optimized',
+                                                                            icon: Code,
+                                                                            color: 'text-blue-500 bg-blue-500/10',
+                                                                            patterns: ['Two-pointer Technique', 'Sliding Window', 'Binary Search', 'Memoization', 'Dynamic Programming']
+                                                                        },
+                                                                        {
+                                                                            title: 'Frontend Optimized',
+                                                                            icon: Monitor,
+                                                                            color: 'text-purple-500 bg-purple-500/10',
+                                                                            patterns: ['useMemo / useCallback', 'Lazy Loading Components', 'Code Splitting', 'Debouncing / Throttling']
+                                                                        },
+                                                                        {
+                                                                            title: 'Backend Optimized',
+                                                                            icon: Server,
+                                                                            color: 'text-orange-500 bg-orange-500/10',
+                                                                            patterns: ['Indexing in DB', 'Cache Layer (Redis)', 'Payload Compression', 'Query Optimization']
+                                                                        }
+                                                                    ].map((cat, i) => (
+                                                                        <div key={i} className={`p-6 rounded-[2.5rem] border ${darkMode ? 'bg-white/5 border-white/5' : 'bg-gray-50 border-gray-100'}`}>
+                                                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${cat.color}`}>
+                                                                                <cat.icon size={24} />
+                                                                            </div>
+                                                                            <h5 className={`font-black uppercase tracking-widest text-[11px] mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>{cat.title}</h5>
+                                                                            <div className="space-y-2">
+                                                                                {cat.patterns.map((p, j) => (
+                                                                                    <div key={j} className="p-3 rounded-xl bg-black/5 dark:bg-white/5 text-[10px] font-bold text-gray-500 hover:text-emerald-500 hover:bg-emerald-500/10 cursor-pointer transition-all">
+                                                                                        {p}
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </motion.div>
+                                                        )}
+
+                                                        {performanceView === 'analyzer' && (
+                                                            <motion.div key="analyzer" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
+                                                                <div className={`p-6 rounded-[2.5rem] border ${darkMode ? 'bg-emerald-500/5 border-emerald-500/10' : 'bg-emerald-50 border-emerald-100'}`}>
+                                                                    <div className="flex items-center gap-3 mb-6">
+                                                                        <div className="p-2 bg-emerald-500 rounded-xl text-white shadow-lg"><Brain size={20} /></div>
+                                                                        <div>
+                                                                            <h4 className={`text-xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>AI Code Intelligence</h4>
+                                                                            <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Detecting Inefficiencies in Real-time</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex flex-col gap-4">
+                                                                        <textarea
+                                                                            value={perfCode}
+                                                                            onChange={(e) => setPerfCode(e.target.value)}
+                                                                            className={`w-full min-h-[200px] p-6 rounded-3xl font-mono text-xs border focus:outline-none focus:ring-2 focus:ring-emerald-500/50 resize-none ${darkMode ? 'bg-[#050810] border-white/10 text-emerald-400' : 'bg-gray-900 border-gray-800 text-emerald-300'}`}
+                                                                            placeholder="Paste function here..."
+                                                                        />
+                                                                        <button
+                                                                            onClick={() => setPerfAnalysis({
+                                                                                vulnerabilities: [
+                                                                                    { type: 'Inefficient Loops', severity: 'Critical', impact: 'O(n²)', improvement: 'Replace nested loop with Map lookup' },
+                                                                                    { type: 'Redundant States', severity: 'Medium', impact: 'Re-renders', improvement: 'Memoize computed values via useMemo' },
+                                                                                    { type: 'Repeated API Calls', severity: 'High', impact: 'Bandwidth', improvement: 'Add a cache/memoization layer' },
+                                                                                    { type: 'Large Payload', severity: 'Low', impact: 'Latency', improvement: 'Enable response compression' }
+                                                                                ]
+                                                                            })}
+                                                                            className="py-4 bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-xl shadow-emerald-500/20 active:scale-95 transition-all"
+                                                                        >
+                                                                            Analyze Efficiency ⚡
+                                                                        </button>
+                                                                    </div>
+
+                                                                    {perfAnalysis && (
+                                                                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-6 space-y-4">
+                                                                            <h5 className="text-[10px] font-black uppercase tracking-widest text-gray-500">AI Intelligence Report</h5>
+                                                                            <div className="space-y-3">
+                                                                                {perfAnalysis.vulnerabilities.map((v, i) => (
+                                                                                    <div key={i} className={`p-4 rounded-2xl border ${darkMode ? 'bg-black/40 border-white/5' : 'bg-white border-gray-100'} flex items-start gap-4`}>
+                                                                                        <div className={`p-2 rounded-xl ${v.severity === 'Critical' ? 'bg-red-500/20 text-red-500' : 'bg-amber-500/20 text-amber-500'}`}>
+                                                                                            <AlertCircle size={14} />
+                                                                                        </div>
+                                                                                        <div className="flex-1">
+                                                                                            <div className="flex justify-between items-center mb-1">
+                                                                                                <span className={`text-xs font-black uppercase ${v.severity === 'Critical' ? 'text-red-500' : 'text-amber-500'}`}>{v.type}</span>
+                                                                                                <span className="text-[9px] font-black text-gray-500">Impact: <span className="text-white">{v.impact}</span></span>
+                                                                                            </div>
+                                                                                            <p className="text-[11px] font-bold text-gray-500 italic">"Try this: {v.improvement}"</p>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </motion.div>
+                                                                    )}
+                                                                </div>
+                                                            </motion.div>
+                                                        )}
+
+                                                        {performanceView === 'challenge' && (
+                                                            <motion.div key="challenge" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="space-y-6">
+                                                                <div className={`p-10 rounded-[2.5rem] border text-center relative overflow-hidden ${darkMode ? 'bg-gradient-to-br from-emerald-500/20 to-transparent border-emerald-500/20' : 'bg-emerald-50 border-emerald-200'}`}>
+                                                                    <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
+                                                                    <div className="relative z-10 flex flex-col items-center space-y-4">
+                                                                        <div className="w-20 h-20 bg-emerald-500 rounded-[2rem] flex items-center justify-center text-white shadow-[0_0_30px_rgba(16,185,129,0.3)] animate-pulse">
+                                                                            <Zap size={40} />
+                                                                        </div>
+                                                                        <h4 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Performance Challenge</h4>
+                                                                        <p className="text-sm font-bold text-gray-500 max-w-sm mx-auto">Optimize the given function to achieve O(log n) time. You have <span className="text-emerald-500">5 minutes</span>.</p>
+                                                                        <div className="flex gap-4 pt-4">
+                                                                            <div className="px-6 py-2 bg-black/20 rounded-xl text-xs font-black text-emerald-400 border border-emerald-500/20 uppercase tracking-widest">Prize: 250 XP</div>
+                                                                            <div className="px-6 py-2 bg-black/20 rounded-xl text-[9px] font-black text-emerald-400/60 border border-emerald-500/10 uppercase tracking-widest text-left">
+                                                                                Score weight:<br />
+                                                                                • Improvement % (50%)<br />
+                                                                                • Time taken (30%)<br />
+                                                                                • Readability (20%)
+                                                                            </div>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => { setPerfChallengeActive(true); setPerformanceView('analyzer'); }}
+                                                                            className="mt-6 px-12 py-5 bg-emerald-500 text-white rounded-2xl font-black text-lg shadow-xl shadow-emerald-500/20 active:scale-95 transition-all"
+                                                                        >
+                                                                            Start Timed Race 🏁
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </motion.div>
+                                                        )}
+
+                                                        {performanceView === 'report' && (
+                                                            <motion.div key="report" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                                    <div className={`p-8 rounded-[2.5rem] border ${darkMode ? 'bg-white/5 border-white/5' : 'bg-white border-gray-100 shadow-xl shadow-gray-200/40'}`}>
+                                                                        <h5 className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-6">Performance Gains (Before vs After)</h5>
+                                                                        <div className="space-y-6">
+                                                                            {[
+                                                                                { label: 'Complexity', before: 'O(n²)', after: 'O(n)', gain: '92% Decrease', color: 'text-purple-500' },
+                                                                                { label: 'Execution Time', before: '245ms', after: '12ms', gain: '20x Faster', color: 'text-emerald-500' },
+                                                                                { label: 'Memory Usage', before: '12.4MB', after: '4.2MB', gain: '66% Saved', color: 'text-blue-500' },
+                                                                                { label: 'Confidence Gain', before: '+0%', after: '+12%', gain: 'AI Confidence Boost', color: 'text-orange-500' }
+                                                                            ].map((stat, i) => (
+                                                                                <div key={i} className="flex items-center justify-between border-b dark:border-white/5 pb-4 last:border-0">
+                                                                                    <div className="space-y-1">
+                                                                                        <div className="text-[10px] font-black text-gray-500 uppercase">{stat.label}</div>
+                                                                                        <div className="flex items-center gap-3">
+                                                                                            <span className="text-sm font-black text-gray-400 line-through decoration-red-500/50">{stat.before}</span>
+                                                                                            <ArrowRight size={14} className="text-gray-500" />
+                                                                                            <span className={`text-base font-black ${stat.color}`}>{stat.after}</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div className={`px-3 py-1.5 rounded-xl font-black text-[9px] uppercase tracking-widest ${darkMode ? 'bg-white/5 text-emerald-500' : 'bg-emerald-50 text-emerald-600'}`}>
+                                                                                        {stat.gain}
+                                                                                    </div>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="flex flex-col gap-6">
+                                                                        <div className={`p-8 rounded-[2.5rem] border text-center flex-1 flex flex-col items-center justify-center space-y-4 ${darkMode ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-emerald-50 border-emerald-100'}`}>
+                                                                            <div className="w-20 h-20 bg-emerald-500 rounded-[2.5rem] flex items-center justify-center text-white shadow-xl shadow-emerald-500/20 rotate-6 hover:rotate-0 transition-transform cursor-pointer">
+                                                                                <Medal size={40} />
+                                                                            </div>
+                                                                            <div>
+                                                                                <h4 className={`text-xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Optimizer Badge</h4>
+                                                                                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mt-1">Status: Unlocked 🔓</p>
+                                                                            </div>
+                                                                            <button onClick={() => setPerformanceView('concept')} className="mt-2 text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] hover:text-emerald-500 transition-colors">View Certificate</button>
+                                                                        </div>
+
+                                                                        <div className={`p-8 rounded-[2.5rem] border ${darkMode ? 'bg-[#1a222c] border-white/5' : 'bg-white border-gray-100 shadow-xl shadow-gray-200/40'}`}>
+                                                                            <div className="flex items-center gap-3 mb-4">
+                                                                                <div className="p-2 bg-blue-500 rounded-xl text-white shadow-lg"><Lock size={16} /></div>
+                                                                                <div>
+                                                                                    <h5 className={`text-sm font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Next Milestone</h5>
+                                                                                    <p className="text-[10px] font-bold text-gray-500 uppercase">Advanced System Design</p>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="w-full h-2 bg-gray-500/10 rounded-full overflow-hidden">
+                                                                                <div className="h-full w-[85%] bg-blue-500 rounded-full" />
+                                                                            </div>
+                                                                            <div className="mt-2 flex justify-between text-[9px] font-black text-gray-500 tracking-widest uppercase">
+                                                                                <span>Progress</span>
+                                                                                <span>85% (15% more for Unlock)</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </motion.div>
                                                         )}
                                                     </AnimatePresence>
                                                 </div>
                                             )}
                                         </AnimatePresence>
-
-
-
-
-
                                     </div>
-            </div>
-                            )
-}
+                                )}
 
-                            // Sub-components
-                            function SectionCard({title, icon: Icon, children, darkMode }) {
-    return (
-                            <div className={`p-6 md:p-8 rounded-[2rem] border ${darkMode ? 'bg-[#1a222c] border-white/5' : 'bg-white border-gray-100 shadow-xl shadow-gray-200/50'}`}>
-                                <div className="flex items-center gap-3 mb-6">
-                                    <div className={`p-2 rounded-xl ${darkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
-                                        <Icon size={20} className={darkMode ? 'text-white' : 'text-gray-900'} />
-                                    </div>
-                                    <h3 className={`text-xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>{title}</h3>
-                                </div>
-                                {children}
                             </div>
-                            )
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+        </div>
+    )
 }
 
-                            function QuickActionBtn({icon: Icon, label, color, darkMode, active, onClick }) {
+// Sub-components
+function SectionCard({ title, icon: Icon, children, darkMode }) {
+    return (
+        <div className={`p-6 md:p-8 rounded-[2rem] border ${darkMode ? 'bg-[#1a222c] border-white/5' : 'bg-white border-gray-100 shadow-xl shadow-gray-200/50'}`}>
+            <div className="flex items-center gap-3 mb-6">
+                <div className={`p-2 rounded-xl ${darkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
+                    <Icon size={20} className={darkMode ? 'text-white' : 'text-gray-900'} />
+                </div>
+                <h3 className={`text-xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>{title}</h3>
+            </div>
+            {children}
+        </div>
+    )
+}
+
+function QuickActionBtn({ icon: Icon, label, color, darkMode, active, onClick }) {
     const colors = {
-                                blue: 'text-blue-500 bg-blue-500/10 border-blue-500/20 hover:bg-blue-500 hover:text-white',
-                            purple: 'text-purple-500 bg-purple-500/10 border-purple-500/20 hover:bg-purple-500 hover:text-white',
-                            green: 'text-green-500 bg-green-500/10 border-green-500/20 hover:bg-green-500 hover:text-white',
-                            orange: 'text-orange-500 bg-orange-500/10 border-orange-500/20 hover:bg-orange-500 hover:text-white',
-                            red: 'text-red-500 bg-red-500/10 border-red-500/20 hover:bg-red-500 hover:text-white',
+        blue: 'text-blue-500 bg-blue-500/10 border-blue-500/20 hover:bg-blue-500 hover:text-white',
+        purple: 'text-purple-500 bg-purple-500/10 border-purple-500/20 hover:bg-purple-500 hover:text-white',
+        green: 'text-green-500 bg-green-500/10 border-green-500/20 hover:bg-green-500 hover:text-white',
+        orange: 'text-orange-500 bg-orange-500/10 border-orange-500/20 hover:bg-orange-500 hover:text-white',
+        red: 'text-red-500 bg-red-500/10 border-red-500/20 hover:bg-red-500 hover:text-white',
     }
 
-                            return (
-                            <button
-                                onClick={onClick}
-                                className={`p-4 rounded-2xl border flex flex-col items-center gap-3 transition-all active:scale-95 group ${darkMode ? 'bg-[#1a222c] border-white/5' : 'bg-white border-gray-100 shadow-sm'} ${active ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-[#121820] ring-offset-white' : ''}`}
-                            >
-                                <div className={`p-3 rounded-xl transition-all ${colors[color]} ${!darkMode && 'bg-gray-50 px-5'}`}>
-                                    <Icon size={24} />
-                                </div>
-                                <span className={`text-xs font-bold text-center ${darkMode ? 'text-gray-300 group-hover:text-white' : 'text-gray-600 group-hover:text-gray-900'}`}>
-                                    {label}
-                                </span>
-                            </button>
-                            )
+    return (
+        <button
+            onClick={onClick}
+            className={`p-4 rounded-2xl border flex flex-col items-center gap-3 transition-all active:scale-95 group ${darkMode ? 'bg-[#1a222c] border-white/5' : 'bg-white border-gray-100 shadow-sm'} ${active ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-[#121820] ring-offset-white' : ''}`}
+        >
+            <div className={`p-3 rounded-xl transition-all ${colors[color]} ${!darkMode && 'bg-gray-50 px-5'}`}>
+                <Icon size={24} />
+            </div>
+            <span className={`text-xs font-bold text-center ${darkMode ? 'text-gray-300 group-hover:text-white' : 'text-gray-600 group-hover:text-gray-900'}`}>
+                {label}
+            </span>
+        </button>
+    )
 }
 
-                            function RecommendationItem({text, type, darkMode, onClick}) {
+function RecommendationItem({ text, type, darkMode, onClick }) {
     const isCritical = type === 'Critical'
-                            return (
-                            <div onClick={onClick} className={`p-4 rounded-xl border flex items-center justify-between group cursor-pointer ${darkMode ? 'bg-white/5 border-white/5 hover:bg-white/10' : 'bg-gray-50 border-gray-100 hover:bg-white hover:shadow-md'}`}>
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-1.5 h-1.5 rounded-full ${isCritical ? 'bg-red-500' : 'bg-blue-500'}`} />
-                                    <span className={`text-sm font-bold ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{text}</span>
-                                </div>
-                                <ArrowRight size={16} className={`transition-transform group-hover:translate-x-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-                            </div>
-                            )
+    return (
+        <div
+            onClick={onClick}
+            className={`p-5 rounded-2xl border flex items-center justify-between group cursor-pointer transition-all duration-300 relative overflow-hidden ${darkMode
+                ? 'bg-[#151b23] border-white/5 hover:bg-white/10 hover:border-blue-500/30'
+                : 'bg-white border-gray-100 hover:shadow-xl hover:shadow-gray-200/50 hover:border-blue-200'
+                }`}
+        >
+            <div className={`absolute top-0 left-0 w-1 h-full ${isCritical ? 'bg-red-500' : 'bg-blue-500'} opacity-0 group-hover:opacity-100 transition-opacity`} />
+            <div className="flex items-center gap-4 relative z-10">
+                <div className={`p-2.5 rounded-xl transition-all duration-300 ${darkMode
+                    ? (isCritical ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400')
+                    : (isCritical ? 'bg-red-50 text-red-500 shadow-sm' : 'bg-blue-50 text-blue-500 shadow-sm')
+                    } group-hover:scale-110`}>
+                    {isCritical ? <AlertCircle size={18} /> : <Zap size={18} />}
+                </div>
+                <div className="flex flex-col">
+                    <span className={`text-[13px] font-black ${darkMode ? 'text-gray-200 group-hover:text-white' : 'text-gray-800'}`}>{text}</span>
+                    <span className={`text-[10px] font-bold uppercase tracking-widest ${isCritical ? 'text-red-500' : 'text-blue-500'} mt-0.5`}>
+                        {isCritical ? 'Priority Action' : 'Study Goal'}
+                    </span>
+                </div>
+            </div>
+            <div className={`p-2 rounded-lg transition-all duration-300 group-hover:translate-x-1 ${darkMode ? 'bg-white/5 text-gray-400' : 'bg-gray-50 text-gray-400'} group-hover:text-blue-500`}>
+                <ArrowRight size={14} />
+            </div>
+        </div>
+    )
 }
 
-                            function StatTiny({label, value, color, darkMode}) {
+function StatTiny({ label, value, color, darkMode }) {
     return (
-                            <div className={`p-3 rounded-xl text-center ${darkMode ? 'bg-white/5' : 'bg-gray-50'}`}>
-                                <div className={`text-lg font-black ${color}`}>{value}</div>
-                                <div className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{label}</div>
-                            </div>
-                            )
+        <div className={`p-3 rounded-xl text-center ${darkMode ? 'bg-white/5' : 'bg-gray-50'}`}>
+            <div className={`text-lg font-black ${color}`}>{value}</div>
+            <div className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{label}</div>
+        </div>
+    )
 }
 
-                            function PeerGroupCard({name, members, active, darkMode}) {
+function PeerGroupCard({ name, members, active, darkMode }) {
     return (
-                            <div className={`flex items-center justify-between p-3 rounded-xl ${darkMode ? 'bg-white/5' : 'bg-gray-50'}`}>
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black ${darkMode ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-600'}`}>
-                                        {name.substring(0, 2)}
-                                    </div>
-                                    <div>
-                                        <h5 className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{name}</h5>
-                                        <p className="text-[10px] text-gray-500 font-bold">{members} active now</p>
-                                    </div>
-                                </div>
-                                {active && <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />}
-                            </div>
-                            )
+        <div className={`flex items-center justify-between p-3 rounded-xl ${darkMode ? 'bg-white/5' : 'bg-gray-50'}`}>
+            <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black ${darkMode ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-600'}`}>
+                    {name.substring(0, 2)}
+                </div>
+                <div>
+                    <h5 className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{name}</h5>
+                    <p className="text-[10px] text-gray-500 font-bold">{members} active now</p>
+                </div>
+            </div>
+            {active && <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />}
+        </div>
+    )
 }
